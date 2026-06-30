@@ -1,0 +1,95 @@
+<?php
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\AcademicYearController;
+use App\Http\Controllers\CourseController;
+use App\Http\Controllers\SectionController;
+use App\Http\Controllers\EnrollmentController;
+use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\EvaluationController;
+use App\Http\Controllers\GradeController;
+use App\Http\Controllers\FeeController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\TenantSettingController;
+use App\Http\Controllers\StudentPortalController;
+use App\Http\Controllers\ParentPortalController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\AcademicPeriodController;
+use App\Http\Middleware\TenantScopeMiddleware;
+
+use App\Http\Controllers\StudentController;
+use App\Http\Controllers\StudentAcademicController;
+use App\Http\Controllers\CourseAssignmentController;
+use App\Http\Controllers\TeacherDashboardController;
+
+// ─── Public Routes ────────────────────────────────────────────────────────────
+
+Route::prefix('v1')->group(function () {
+    Route::post('/login', [AuthController::class, 'login']);
+
+    // ─── Protected Routes (auth + tenant scoping) ─────────────────────────────────
+
+    Route::middleware(['auth:sanctum', TenantScopeMiddleware::class])->group(function () {
+
+        // Auth
+        Route::post('/logout', [AuthController::class, 'logout']);
+        Route::get('/me', [AuthController::class, 'me']);
+
+        // Students Core
+        Route::patch('students/{student}/status', [StudentController::class, 'updateStatus']);
+        Route::get('students/{student}/academic', [StudentAcademicController::class, 'getHistory']);
+
+        // Academic hierarchy
+        Route::apiResource('academic-years', AcademicYearController::class);
+        Route::apiResource('grade-levels', GradeLevelController::class);
+        Route::apiResource('sections', SectionController::class);
+        Route::apiResource('academic-periods', AcademicPeriodController::class);
+        Route::patch('academic-periods/{academic_period}/toggle-lock', [AcademicPeriodController::class, 'toggleLock']);
+
+        Route::apiResource('courses', CourseController::class);
+        Route::apiResource('enrollments', EnrollmentController::class);
+        Route::apiResource('students', StudentController::class);
+        Route::apiResource('course-assignments', CourseAssignmentController::class);
+
+        // Attendance, Evaluations, and Grades
+        Route::get('attendance', [AttendanceController::class, 'index']);
+        Route::post('attendance/bulk', [AttendanceController::class, 'storeBulk']);
+
+        Route::apiResource('evaluations', EvaluationController::class);
+        Route::post('evaluations/{evaluation}/publish', [EvaluationController::class, 'publish']);
+
+        Route::get('grades', [GradeController::class, 'index']);
+        Route::post('grades/bulk', [GradeController::class, 'storeBulk']);
+
+        // Teacher Dashboard
+        Route::get('teacher/dashboard', [TeacherDashboardController::class, 'index']);
+        Route::get('course-assignments/{id}/gradebook', [TeacherDashboardController::class, 'gradebook']);
+
+        // Finanzas
+        Route::middleware('module:finances')->group(function () {
+            Route::apiResource('fees', FeeController::class)->only(['index', 'store', 'show']);
+            Route::apiResource('payments', PaymentController::class)->only(['index', 'store']);
+            Route::post('payments/{id}/void', [PaymentController::class, 'voidPayment']);
+            
+            // Student 360 Finances
+            Route::get('students/{id}/finances', [StudentFinancesController::class, 'show']);
+        });
+
+        // Settings (Configuración Institucional)
+        Route::get('settings', [TenantSettingController::class, 'show']);
+        Route::post('settings', [TenantSettingController::class, 'update']); // usamos post para soportar subida de form-data con archivos
+
+        // Portals
+        Route::get('student-portal/grades', [StudentPortalController::class, 'myGrades']);
+        Route::get('student-portal/attendance', [StudentPortalController::class, 'myAttendance']);
+        Route::get('parent-portal/children', [ParentPortalController::class, 'myChildren']);
+        Route::get('parent-portal/children/{studentId}', [ParentPortalController::class, 'childDetail']);
+
+        // Reports
+        Route::get('reports/student-report-card/{studentId}', [ReportController::class, 'studentReportCard']);
+        Route::get('reports/section/{sectionId}/report-cards', [ReportController::class, 'generateSectionPdfs']);
+    });
+});

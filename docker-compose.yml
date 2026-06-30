@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: edukore-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: edukore
+      POSTGRES_PASSWORD: secretpassword
+      POSTGRES_DB: edukore_db
+    volumes:
+      - edukore-pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis:
+    image: redis:7
+    container_name: edukore-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - edukore-redisdata:/data
+    restart: unless-stopped
+
+volumes:
+  edukore-pgdata:
+  edukore-redisdata:
