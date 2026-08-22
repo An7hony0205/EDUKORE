@@ -106,7 +106,8 @@ class PaymentController extends Controller
             return response()->json(['message' => 'Pago procesado exitosamente', 'payment' => $payment], 201);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['message' => 'Error al procesar el pago', 'error' => $e->getMessage()], 500);
+            \Illuminate\Support\Facades\Log::error($e);
+            return response()->json(['message' => 'Error procesando el pago.', 'error' => $e->getMessage()], 500);
         }
     }
 

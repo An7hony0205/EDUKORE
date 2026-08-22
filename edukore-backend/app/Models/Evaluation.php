@@ -5,9 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class Evaluation extends Model
 {
+    use HasUuids;
+
     protected $keyType = 'string';
     public $incrementing = false;
 
@@ -21,13 +24,12 @@ class Evaluation extends Model
         'due_date',
         'category',
         'weight',
-        'is_published',
+        'status',
     ];
 
     protected $casts = [
         'due_date'     => 'datetime',
         'weight'       => 'float',
-        'is_published' => 'boolean',
     ];
 
     public function courseAssignment(): BelongsTo

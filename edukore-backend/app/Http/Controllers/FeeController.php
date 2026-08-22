@@ -18,7 +18,11 @@ class FeeController extends Controller
             $query->where('status', $request->status);
         }
 
-        return response()->json($query->paginate(20));
+        return response()->json([
+            'fees' => $query->paginate(20),
+            'students' => \App\Models\Student::with('user')->get(),
+            'tenant' => auth()->user()->tenant
+        ]);
     }
 
     /**
@@ -28,40 +32,29 @@ class FeeController extends Controller
     {
         $validated = $request->validate([
             'student_id' => 'required|uuid|exists:students,id',
-            'fee_type_id' => 'nullable|uuid|exists:fee_types,id',
             'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
             'amount' => 'required|numeric|min:0',
-            'tax_amount' => 'nullable|numeric|min:0',
-            'penalty_amount' => 'nullable|numeric|min:0',
-            'currency' => 'nullable|string|size:3',
             'due_date' => 'required|date',
-            'discount_ids' => 'nullable|array',
-            'discount_ids.*' => 'uuid|exists:discounts,id'
+            'category' => 'required|in:ACADEMIC,COMMUNITY',
         ]);
 
-        $feeData = collect($validated)->except('discount_ids')->toArray();
-        // Set discount_amount based on relations if applied? For now we just create the fee
-        $feeData['discount_amount'] = 0; // Se recalcula en background o al añadir descuentos
+        $tenant = auth()->user()->tenant;
+
+        if ($tenant->institution_type === 'PUBLIC' && $validated['category'] === 'ACADEMIC') {
+            return response()->json([
+                'message' => 'No se pueden crear cobros académicos (pensiones/matrículas) en instituciones de tipo PÚBLICO. Solo se permiten cobros comunitarios (ej: APAFA).'
+            ], 403);
+        }
+
+        $feeData = $validated;
+        $feeData['tenant_id'] = $tenant->id;
+        $feeData['status'] = 'pending';
+        // Mock default currency if missing
+        $feeData['currency'] = 'PEN';
 
         $fee = Fee::create($feeData);
 
-        if (!empty($validated['discount_ids'])) {
-            $fee->discounts()->syncWithPivotValues($validated['discount_ids'], ['applied_by' => auth()->id()]);
-            // Recalculate discount_amount
-            $totalDiscount = 0;
-            foreach ($fee->discounts as $discount) {
-                if ($discount->type === 'fixed') {
-                    $totalDiscount += $discount->value;
-                } else {
-                    $totalDiscount += ($fee->amount * ($discount->value / 100));
-                }
-            }
-            $fee->discount_amount = $totalDiscount;
-            $fee->save();
-        }
-
-        return response()->json($fee->load('discounts', 'feeType'), 201);
+        return response()->json($fee->load('student.user'), 201);
     }
 
     /**

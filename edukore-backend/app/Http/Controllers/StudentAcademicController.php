@@ -24,7 +24,7 @@ class StudentAcademicController extends Controller
             'section.gradeLevel.level.academicYear'
         ])
         ->where('student_id', $student->id)
-        ->orderByDesc('enrolled_at')
+        ->orderByDesc('created_at')
         ->get();
 
         return response()->json([

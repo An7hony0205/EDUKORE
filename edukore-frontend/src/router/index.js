@@ -14,8 +14,11 @@ const BillingDashboard = () => import('../views/BillingDashboard.vue')
 const SettingsView = () => import('../views/SettingsView.vue')
 const AuditLogsView = () => import('../views/AuditLogsView.vue')
 const StudentsView = () => import('../views/StudentsView.vue')
-const ReportsView = () => import('../views/ReportsView.vue')
+const ReportsView = () => import('../views/Admin/ReportsView.vue')
 const AcademicPeriodsView = () => import('../views/Admin/AcademicPeriodsView.vue')
+const FinancesView = () => import('../views/Admin/FinancesView.vue')
+const CommunityEventsView = () => import('../views/Admin/CommunityEventsView.vue')
+const AnnouncementsView = () => import('../views/Admin/AnnouncementsView.vue')
 
 const routes = [
   {
@@ -66,16 +69,28 @@ const routes = [
     component: BillingDashboard,
     meta: { requiresAuth: true },
   },
+    {
+      path: '/community-events',
+      name: 'community-events',
+      component: CommunityEventsView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/announcements',
+      name: 'announcements',
+      component: AnnouncementsView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/academic-periods',
+    name: 'academic-periods',
+    component: AcademicPeriodsView,
+    meta: { requiresAuth: true },
+  },
   {
     path: '/settings',
     name: 'settings',
     component: SettingsView,
-    meta: { requiresAuth: true },
-  },
-  {
-    path: '/academic-periods',
-    name: 'academic-periods',
-    component: AcademicPeriodsView,
     meta: { requiresAuth: true },
   },
   {
@@ -118,6 +133,18 @@ const routes = [
     path: '/courses',
     name: 'courses',
     component: CoursesList,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/finances',
+    name: 'finances',
+    component: FinancesView,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/community-events',
+    name: 'community-events',
+    component: () => import('../views/Admin/CommunityEventsView.vue'),
     meta: { requiresAuth: true },
   },
   {
@@ -165,6 +192,23 @@ router.beforeEach((to) => {
 
   if (to.meta.requiresGuest && isAuthenticated) {
     return { name: 'dashboard' }
+  }
+
+  // Feature Flag Guards
+  if (isAuthenticated && auth.user?.tenant?.active_modules) {
+    const modules = auth.user.tenant.active_modules
+    
+    // Protect finances module
+    if ((to.path.startsWith('/billing') || to.path.startsWith('/finances')) && modules.finances === false) {
+      alert('El módulo de Finanzas está desactivado.')
+      return { name: 'dashboard' }
+    }
+    
+    // Protect academic module
+    if ((to.path.startsWith('/courses') || to.path.startsWith('/course-assignments')) && modules.academic === false) {
+      alert('El módulo Académico está desactivado.')
+      return { name: 'dashboard' }
+    }
   }
 })
 

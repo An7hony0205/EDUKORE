@@ -21,12 +21,12 @@ class Enrollment extends Model
         'student_id',
         'section_id',
         'academic_year_id',
-        'enrolled_at',
+        
         'status', // preinscrito, matriculado, suspendido, retirado, finalizado
     ];
 
     protected $casts = [
-        'enrolled_at' => 'datetime',
+        
     ];
 
     public function getActivitylogOptions(): LogOptions

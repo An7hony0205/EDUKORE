@@ -150,7 +150,7 @@ onMounted(() => {
                 <div class="flex items-center gap-4">
                   <div class="text-xs text-slate-500 text-right">
                     Matriculado el:<br/>
-                    <span class="text-slate-400">{{ new Date(enrollment.enrolled_at).toLocaleDateString() }}</span>
+                    <span class="text-slate-400">{{ new Date(enrollment.created_at).toLocaleDateString() }}</span>
                   </div>
                   <span class="px-2 py-1 rounded-full text-[10px] font-medium uppercase tracking-wider bg-primary-500/10 text-primary-400">
                     {{ enrollment.status }}

@@ -20,7 +20,7 @@ class GradeCalculationService
 
         $grades = $enrollment->grades->filter(function ($grade) use ($academicPeriodId) {
             $evaluation = $grade->evaluation;
-            if (!$evaluation || !$evaluation->is_published) {
+            if (!$evaluation || !in_array($evaluation->status, ['PUBLISHED', 'CLOSED'])) {
                 return false;
             }
             if ($academicPeriodId && $evaluation->academic_period_id !== $academicPeriodId) {
@@ -59,7 +59,7 @@ class GradeCalculationService
         $average = $this->calculateStudentAverage($enrollmentId, $academicPeriodId);
         
         $enrollment = Enrollment::with(['grades.evaluation' => function ($query) use ($academicPeriodId) {
-            $query->where('is_published', true);
+            $query->whereIn('status', ['PUBLISHED', 'CLOSED']);
             if ($academicPeriodId) {
                 $query->where('academic_period_id', $academicPeriodId);
             }

@@ -22,13 +22,14 @@ class EvaluationController extends Controller
     {
         $validated = $request->validate([
             'course_assignment_id' => 'required|uuid|exists:course_assignments,id',
+            'academic_period_id' => 'nullable|uuid|exists:academic_periods,id',
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'due_date' => 'nullable|date',
             'rubric_id' => 'nullable|uuid|exists:rubrics,id',
             'category' => 'nullable|string',
             'weight' => 'nullable|numeric|min:0',
-            'is_published' => 'boolean'
+            'status' => 'in:DRAFT,PUBLISHED,CLOSED'
         ]);
 
         $evaluation = Evaluation::create($validated);
@@ -44,17 +45,22 @@ class EvaluationController extends Controller
     public function update(Request $request, Evaluation $evaluation)
     {
         $validated = $request->validate([
+            'academic_period_id' => 'nullable|uuid|exists:academic_periods,id',
             'title' => 'sometimes|required|string|max:255',
             'description' => 'nullable|string',
             'due_date' => 'nullable|date',
             'rubric_id' => 'nullable|uuid|exists:rubrics,id',
             'category' => 'nullable|string',
             'weight' => 'nullable|numeric|min:0',
-            'is_published' => 'boolean'
+            'status' => 'in:DRAFT,PUBLISHED,CLOSED'
         ]);
 
         if ($evaluation->academicPeriod && $evaluation->academicPeriod->is_locked) {
-            return response()->json(['message' => 'Cannot modify an evaluation in a locked academic period.'], 403);
+            return response()->json(['message' => 'No se puede modificar una evaluación en un periodo académico bloqueado.'], 403);
+        }
+        
+        if ($evaluation->status === 'CLOSED') {
+            return response()->json(['message' => 'No se puede modificar una evaluación CERRADA.'], 403);
         }
 
         $evaluation->update($validated);
@@ -65,17 +71,31 @@ class EvaluationController extends Controller
     public function publish(Evaluation $evaluation)
     {
         if ($evaluation->academicPeriod && $evaluation->academicPeriod->is_locked) {
-            return response()->json(['message' => 'Cannot publish an evaluation in a locked academic period.'], 403);
+            return response()->json(['message' => 'No se puede publicar en un periodo académico bloqueado.'], 403);
         }
 
-        $evaluation->update(['is_published' => true]);
+        $evaluation->update(['status' => 'PUBLISHED']);
         return response()->json(['message' => 'Notas publicadas', 'evaluation' => $evaluation]);
+    }
+
+    public function close(Evaluation $evaluation)
+    {
+        if ($evaluation->academicPeriod && $evaluation->academicPeriod->is_locked) {
+            return response()->json(['message' => 'No se puede cerrar en un periodo académico bloqueado.'], 403);
+        }
+
+        $evaluation->update(['status' => 'CLOSED']);
+        return response()->json(['message' => 'Evaluación cerrada', 'evaluation' => $evaluation]);
     }
 
     public function destroy(Evaluation $evaluation)
     {
         if ($evaluation->academicPeriod && $evaluation->academicPeriod->is_locked) {
-            return response()->json(['message' => 'Cannot delete an evaluation in a locked academic period.'], 403);
+            return response()->json(['message' => 'No se puede eliminar una evaluación en un periodo académico bloqueado.'], 403);
+        }
+        
+        if ($evaluation->status === 'CLOSED') {
+            return response()->json(['message' => 'No se puede eliminar una evaluación CERRADA.'], 403);
         }
 
         $evaluation->delete();

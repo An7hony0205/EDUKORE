@@ -1,9 +1,9 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import api from '@/api/axios'
-import GradebookTable from '@/components/Academic/GradebookTable.vue'
-import AttendanceTracker from '@/components/Academic/AttendanceTracker.vue'
+import api from '../../api/axios'
+import GradebookTable from '../../components/Academic/GradebookTable.vue'
+import AttendanceTracker from '../../components/Academic/AttendanceTracker.vue'
 
 const route = useRoute()
 const courseId = route.params.id

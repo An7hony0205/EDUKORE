@@ -5,16 +5,19 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class AcademicYear extends Model
 {
+    use HasUuids;
+
     protected $keyType = 'string';
     public $incrementing = false;
 
     protected $fillable = [
         'id',
         'tenant_id',
-        'name',
+        'year_name',
         'start_date',
         'end_date',
         'is_active',

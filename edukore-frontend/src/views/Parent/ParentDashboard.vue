@@ -1,64 +1,111 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import api from '@/api/axios'
+import api from '../../api/axios'
+import DashboardLayout from '../../layouts/DashboardLayout.vue'
 
-const router = useRouter()
-const loading = ref(true)
-const children = ref([])
+const data = ref(null)
+const announcements = ref([])
+const isLoading = ref(true)
 
-const loadData = async () => {
+const fetchData = async () => {
   try {
-    const res = await api.get('/parent-portal/children')
-    children.value = res.data.children
+    const [dashRes, annRes] = await Promise.all([
+        api.get('/parent-dashboard'),
+        api.get('/announcements')
+    ])
+    data.value = dashRes.data
+    announcements.value = annRes.data
   } catch (error) {
-    console.error("Failed to load children", error)
+    console.error(error)
   } finally {
-    loading.value = false
+    isLoading.value = false
   }
 }
 
 onMounted(() => {
-  loadData()
+  fetchData()
 })
 </script>
 
 <template>
-  <div class="space-y-6">
-    <div class="flex items-center justify-between">
-      <h2 class="text-2xl font-bold text-white">Mis Hijos</h2>
-    </div>
-
-    <div v-if="loading" class="flex justify-center p-12">
-      <div class="w-8 h-8 rounded-full border-4 border-indigo-500 border-t-transparent animate-spin"></div>
-    </div>
-
-    <div v-else-if="children.length === 0" class="text-center p-12 bg-white/5 border border-white/10 rounded-2xl text-slate-400">
-      No tienes hijos registrados en el sistema.
-    </div>
-
-    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div 
-        v-for="child in children" 
-        :key="child.id"
-        class="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-md hover:bg-white/10 transition-colors cursor-pointer group flex flex-col items-center text-center"
-        @click="router.push(`/parent/children/${child.id}`)"
-      >
-        <div class="w-20 h-20 bg-indigo-500/20 text-indigo-400 rounded-full flex items-center justify-center mb-4 border border-indigo-500/30">
-            <svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-        </div>
-        
-        <h3 class="text-xl font-bold text-white group-hover:text-indigo-400 transition-colors">
-          {{ child.user?.name }}
-        </h3>
-        <p class="text-slate-400 mt-1 text-sm">{{ child.user?.email }}</p>
-        
-        <div class="mt-6 pt-4 border-t border-white/10 w-full text-sm">
-          <span class="text-indigo-400 font-medium group-hover:underline">Ver Calificaciones &rarr;</span>
-        </div>
+  <DashboardLayout>
+    <div class="h-full flex flex-col space-y-6">
+      <div>
+        <h1 class="text-2xl font-bold text-white tracking-tight">Portal de Apoderado</h1>
+        <p class="text-slate-400 text-sm mt-1">Visión consolidada de tus estudiantes, finanzas y comunidad</p>
       </div>
-    </div>
-  </div>
+
+      <div v-if="isLoading" class="text-slate-400">Cargando información...</div>
+      <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        <!-- Hijos -->
+        <div class="col-span-1 md:col-span-2 space-y-6">
+          <h2 class="text-lg font-bold text-white">Mis Estudiantes</h2>
+          <div v-if="data.students.length === 0" class="text-slate-400 text-sm">No tienes estudiantes asociados.</div>
+          <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div v-for="student in data.students" :key="student.id" class="bg-brand-surface border border-brand-border p-4 rounded-xl flex items-center gap-4 shadow-lg">
+              <div class="w-12 h-12 bg-indigo-500/20 text-indigo-400 rounded-full flex items-center justify-center font-bold text-xl uppercase">
+                {{ student.user?.name.charAt(0) }}
+              </div>
+              <div>
+                <h3 class="text-white font-medium">{{ student.user?.name }}</h3>
+                <p class="text-xs text-slate-400">Estudiante activo</p>
+              </div>
+            </div>
+          </div>
+
+          <h2 class="text-lg font-bold text-white pt-4">Deudas Económicas (Pensiones)</h2>
+          <div v-if="data.fees.length === 0" class="text-emerald-400 text-sm bg-emerald-500/10 p-4 rounded-xl border border-emerald-500/20 shadow-lg">
+            ¡Felicidades! No tienes deudas académicas pendientes.
+          </div>
+          <div v-else class="space-y-3">
+            <div v-for="fee in data.fees" :key="fee.id" class="bg-brand-surface border border-rose-500/30 p-4 rounded-xl flex justify-between items-center shadow-lg">
+              <div>
+                <h3 class="text-rose-400 font-medium text-sm">{{ fee.title }}</h3>
+                <p class="text-xs text-slate-400">Vence: {{ new Date(fee.due_date).toLocaleDateString() }}</p>
+              </div>
+              <div class="font-bold text-white">
+                {{ fee.currency }} {{ fee.amount }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Obligaciones y Comunidad -->
+        <div class="col-span-1 space-y-6">
+          <div class="bg-amber-500/10 border border-amber-500/30 rounded-xl p-5 shadow-lg">
+            <h2 class="text-amber-400 font-bold mb-4 flex items-center gap-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+              Obligaciones Cívicas
+            </h2>
+            <div v-if="data.obligations.length === 0" class="text-slate-400 text-sm">
+              Estás al día con tus compromisos de APAFA y faenas.
+            </div>
+            <div v-else class="space-y-3">
+              <div v-for="obs in data.obligations" :key="obs.id" class="bg-black/20 p-3 rounded-lg border border-amber-500/20">
+                <h4 class="text-sm font-semibold text-white">{{ obs.title }}</h4>
+                <p class="text-xs text-slate-300 mt-1">{{ obs.description }}</p>
+                <span class="inline-block mt-2 text-[10px] uppercase font-bold text-rose-400 bg-rose-500/20 px-2 py-1 rounded">Pendiente de resolución</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-brand-surface border border-brand-border rounded-xl p-5 shadow-lg">
+            <h2 class="text-white font-bold mb-4">Próximos Eventos</h2>
+            <div v-if="data.upcoming_events.length === 0" class="text-slate-400 text-sm">
+              No hay eventos programados.
+            </div>
+            <div v-else class="space-y-3">
+              <div v-for="ev in data.upcoming_events" :key="ev.id" class="border-b border-brand-border pb-3 last:border-0 last:pb-0">
+                <h4 class="text-sm font-semibold text-indigo-400">{{ ev.event?.title }}</h4>
+                <p class="text-xs text-slate-400 mt-1">{{ new Date(ev.event?.date).toLocaleString() }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+      </div>
+      </div>
+      </div>
+  </DashboardLayout>
 </template>

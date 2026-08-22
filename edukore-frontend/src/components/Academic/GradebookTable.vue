@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
-import api from '@/api/axios'
+import api from '../../api/axios'
 
 const props = defineProps({
   assignment: {
@@ -61,38 +61,58 @@ const calculateAverage = (enrollmentId) => {
 }
 
 // Auto-save logic
-const onGradeChange = (enrollmentId, evaluationId, event) => {
+const onGradeChange = (enrollmentId, evaluation, event) => {
   let val = event.target.value
+  let score = null
   
   if (val !== '' && !isNaN(val)) {
-      gradesState.value[enrollmentId][evaluationId] = parseFloat(val)
-  } else {
-      gradesState.value[enrollmentId][evaluationId] = null
+      score = parseFloat(val)
   }
+
+  // If Published, prompt for reason
+  let reason = null
+  if (evaluation.status === 'PUBLISHED') {
+      const originalValue = props.assignment.section.enrollments
+        .find(e => e.id === enrollmentId)?.grades
+        .find(g => g.evaluation_id === evaluation.id)?.score;
+        
+      if (originalValue != score) { // loose equality on purpose
+          reason = prompt("Motivo de la modificación (Auditoría):");
+          if (!reason) {
+              // Revert
+              event.target.value = originalValue ?? '';
+              return;
+          }
+      }
+  }
+
+  gradesState.value[enrollmentId][evaluation.id] = score
 
   saveStatus.value = 'Saving...'
   
   if (saveTimeout) clearTimeout(saveTimeout)
   
   saveTimeout = setTimeout(async () => {
-    await saveGrade(enrollmentId, evaluationId, gradesState.value[enrollmentId][evaluationId])
+    await saveGrade(enrollmentId, evaluation.id, score, reason)
   }, 1000) // 1 second debounce
 }
 
-const saveGrade = async (enrollmentId, evaluationId, score) => {
+const saveGrade = async (enrollmentId, evaluationId, score, reason) => {
   try {
     const payload = {
       evaluation_id: evaluationId,
       grades: [
         {
           enrollment_id: enrollmentId,
-          score: score
+          score: score,
+          reason: reason
         }
       ]
     }
     
     await api.post('/grades/bulk', payload)
     saveStatus.value = 'All changes saved'
+    emit('refresh')
   } catch (error) {
     console.error("Failed to save grade", error)
     saveStatus.value = 'Error saving changes'
@@ -101,7 +121,7 @@ const saveGrade = async (enrollmentId, evaluationId, score) => {
 
 // Publish evaluation
 const publishEvaluation = async (evaluationId) => {
-  if (!confirm("¿Estás seguro de que deseas publicar estas notas? Los estudiantes podrán verlas.")) return;
+  if (!confirm("¿Estás seguro de que deseas publicar estas notas? Los estudiantes podrán verlas y futuros cambios serán auditados.")) return;
   
   try {
     await api.post(`/evaluations/${evaluationId}/publish`)
@@ -111,6 +131,38 @@ const publishEvaluation = async (evaluationId) => {
   }
 }
 
+// Close evaluation
+const closeEvaluation = async (evaluationId) => {
+  if (!confirm("¿Estás seguro de que deseas CERRAR esta evaluación? Ya no se podrán modificar más notas.")) return;
+  
+  try {
+    await api.post(`/evaluations/${evaluationId}/close`)
+    emit('refresh')
+  } catch (error) {
+    alert("Error cerrando evaluación")
+  }
+}
+
+// Create evaluation
+const createEvaluation = async () => {
+  const title = prompt("Título de la evaluación:")
+  if (!title) return
+  const weight = prompt("Peso (%) de la evaluación (ej: 20):", "20")
+  if (!weight) return
+
+  try {
+    await api.post('/evaluations', {
+      course_assignment_id: props.assignment.id,
+      title: title,
+      category: 'Examen', // Default
+      weight: parseFloat(weight),
+      status: 'DRAFT'
+    })
+    emit('refresh')
+  } catch (error) {
+    alert("Error creando evaluación")
+  }
+}
 </script>
 
 <template>
@@ -128,7 +180,7 @@ const publishEvaluation = async (evaluationId) => {
         {{ saveStatus }}
       </div>
       <div>
-        <button class="bg-primary-600 hover:bg-primary-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+        <button @click="createEvaluation" class="bg-primary-600 hover:bg-primary-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
           + Nueva Evaluación
         </button>
       </div>
@@ -153,8 +205,12 @@ const publishEvaluation = async (evaluationId) => {
                   <div class="text-white">{{ ev.title }}</div>
                   <div class="text-[10px] mt-1">{{ ev.category }} &bull; {{ ev.weight }}%</div>
                 </div>
-                <div v-if="ev.is_published" class="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full">
-                  Publicado
+                <div v-if="ev.status === 'CLOSED'" class="text-[10px] bg-rose-500/20 text-rose-400 px-2 py-0.5 rounded-full">
+                  Cerrado
+                </div>
+                <div v-else-if="ev.status === 'PUBLISHED'" class="flex items-center gap-1">
+                  <span class="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full">Publicado</span>
+                  <button @click="closeEvaluation(ev.id)" class="text-[10px] bg-rose-500/20 hover:bg-rose-500/40 text-rose-400 px-2 py-0.5 rounded-full" title="Cerrar Evaluación">x</button>
                 </div>
                 <button v-else @click="publishEvaluation(ev.id)" class="text-[10px] bg-slate-700 hover:bg-slate-600 text-white px-2 py-0.5 rounded-full transition-colors" title="Publicar notas">
                   Borrador
@@ -180,20 +236,21 @@ const publishEvaluation = async (evaluationId) => {
             <td 
               v-for="ev in evaluations" 
               :key="ev.id"
-              class="border-r border-brand-border p-0"
+              class="border-r border-brand-border p-0 relative"
             >
               <input 
                 type="number" 
                 step="0.01"
                 min="0"
-                :disabled="ev.academic_period && ev.academic_period.is_locked"
+                :disabled="ev.status === 'CLOSED' || (ev.academic_period && ev.academic_period.is_locked)"
                 :class="[
                   'w-full h-full min-h-[56px] px-4 py-2 bg-transparent text-white border-none focus:ring-2 focus:ring-inset focus:ring-primary-500 hover:bg-white/5 outline-none text-center',
-                  (ev.academic_period && ev.academic_period.is_locked) ? 'opacity-50 cursor-not-allowed bg-red-900/10' : ''
+                  (ev.status === 'CLOSED' || (ev.academic_period && ev.academic_period.is_locked)) ? 'opacity-50 cursor-not-allowed bg-red-900/10 text-rose-300' : ''
                 ]"
                 :value="gradesState[enrollment.id][ev.id]"
-                @input="onGradeChange(enrollment.id, ev.id, $event)"
+                @change="onGradeChange(enrollment.id, ev, $event)"
               />
+              <div v-if="enrollment.grades.find(g => g.evaluation_id === ev.id)?.audits?.length > 0" class="absolute top-1 right-1 w-2 h-2 bg-amber-500 rounded-full" title="Nota editada (Auditada)"></div>
             </td>
             
             <td class="px-6 py-3 text-center font-bold text-primary-400 bg-primary-500/5">

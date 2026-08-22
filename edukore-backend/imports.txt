@@ -1,0 +1,25 @@
+﻿<?php
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\SearchController;
+use App\Http\Controllers\AcademicYearController;
+use App\Http\Controllers\CourseController;
+use App\Http\Controllers\SectionController;
+use App\Http\Controllers\EnrollmentController;
+use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\EvaluationController;
+use App\Http\Controllers\GradeController;
+use App\Http\Controllers\FeeController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\TenantSettingController;
+use App\Http\Controllers\StudentPortalController;
+use App\Http\Controllers\ParentPortalController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\GradeLevelController;
+use App\Http\Controllers\AcademicPeriodController;
+use App\Http\Controllers\StudentController;
+use App\Http\Controllers\CourseAssignmentController;
+

@@ -1,6 +1,6 @@
 <script setup>
 import { ref, watch, onMounted } from 'vue'
-import api from '@/api/axios'
+import api from '../../api/axios'
 
 const props = defineProps({
   assignment: {
@@ -16,10 +16,10 @@ const saveStatus = ref('All changes saved')
 let saveTimeout = null
 
 const statuses = [
-  { code: 'Presente', label: 'P', color: 'bg-emerald-500 hover:bg-emerald-600 text-white' },
-  { code: 'Tardanza', label: 'T', color: 'bg-amber-500 hover:bg-amber-600 text-white' },
-  { code: 'Ausente', label: 'A', color: 'bg-red-500 hover:bg-red-600 text-white' },
-  { code: 'Justificado', label: 'J', color: 'bg-indigo-500 hover:bg-indigo-600 text-white' }
+  { code: 'Presente', label: 'P', color: 'bg-emerald-500 hover:bg-emerald-600 text-white', tooltip: 'Presente' },
+  { code: 'Tardanza', label: 'T', color: 'bg-amber-500 hover:bg-amber-600 text-white', tooltip: 'Tardanza' },
+  { code: 'Ausente', label: 'A', color: 'bg-red-500 hover:bg-red-600 text-white', tooltip: 'Ausente' },
+  { code: 'Justificado', label: 'J', color: 'bg-indigo-500 hover:bg-indigo-600 text-white', tooltip: 'Justificado' }
 ]
 
 const loadAttendance = async () => {
@@ -58,6 +58,19 @@ watch(selectedDate, () => {
 
 const setStatus = (enrollmentId, status) => {
   attendanceRecords.value[enrollmentId] = status
+  triggerSave()
+}
+
+const markAllPresent = () => {
+  if (selectedDate.value > today) {
+    alert('No se puede registrar asistencia en el futuro.')
+    return
+  }
+  for (const enrollmentId of Object.keys(attendanceRecords.value)) {
+    if (!attendanceRecords.value[enrollmentId]) {
+      attendanceRecords.value[enrollmentId] = 'Presente'
+    }
+  }
   triggerSave()
 }
 
@@ -110,8 +123,12 @@ const saveBulk = async () => {
             <input 
                 type="date" 
                 v-model="selectedDate" 
+                :max="today"
                 class="bg-brand-surface border border-brand-border rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 outline-none"
             />
+            <button @click="markAllPresent" class="bg-primary-600 hover:bg-primary-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                Marcar a todos como Presentes
+            </button>
         </div>
         
         <div class="text-sm text-slate-400 flex items-center gap-2">

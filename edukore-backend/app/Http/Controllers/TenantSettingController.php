@@ -13,7 +13,7 @@ class TenantSettingController extends Controller
      */
     public function show(Request $request)
     {
-        $tenantId = $request->attributes->get('tenant_id');
+        $tenantId = auth()->user()->tenant_id;
         $setting = TenantSetting::firstOrCreate(
             ['tenant_id' => $tenantId],
             [
@@ -33,7 +33,7 @@ class TenantSettingController extends Controller
      */
     public function update(Request $request)
     {
-        $tenantId = $request->attributes->get('tenant_id');
+        $tenantId = auth()->user()->tenant_id;
         $setting = TenantSetting::firstOrCreate(['tenant_id' => $tenantId]);
 
         $validated = $request->validate([

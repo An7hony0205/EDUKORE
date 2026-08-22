@@ -26,7 +26,14 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.clear()
-      window.location.href = '/login'
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login'
+      }
+    } else if (error.response?.status === 403) {
+      // Show friendly message
+      const msg = error.response.data?.message || 'No tienes permiso para acceder a este módulo.'
+      alert(msg) // Ideally we use a toast notification here
+      window.location.href = '/dashboard'
     }
     return Promise.reject(error)
   },

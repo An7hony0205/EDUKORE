@@ -32,6 +32,7 @@ const createPeriod = async () => {
         loadData()
     } catch (e) {
         console.error(e)
+        alert('Error al crear el periodo. Verifica que has llenado todos los campos correctamente, incluyendo el Año Académico.')
     }
 }
 
@@ -59,7 +60,7 @@ const toggleLock = async (id) => {
           <div>
             <label class="block text-sm text-slate-400 mb-1">Año Académico</label>
             <select v-model="newPeriod.academic_year_id" class="w-full bg-white/5 border border-brand-border rounded-lg p-2 text-white outline-none focus:border-primary-500">
-              <option v-for="y in academicYears" :key="y.id" :value="y.id">{{ y.name }}</option>
+              <option v-for="y in academicYears" :key="y.id" :value="y.id">{{ y.year_name }}</option>
             </select>
           </div>
           <div>

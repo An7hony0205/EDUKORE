@@ -16,9 +16,7 @@ class AttendanceController extends Controller
         ]);
 
         $query = Attendance::with('enrollment.student')
-            ->whereHas('enrollment', function ($q) use ($request) {
-                $q->where('course_assignment_id', $request->course_assignment_id);
-            });
+            ->where('course_assignment_id', $request->course_assignment_id);
 
         if ($request->filled('date')) {
             $query->where('date', $request->date);
@@ -31,17 +29,17 @@ class AttendanceController extends Controller
     {
         $request->validate([
             'course_assignment_id' => 'required|uuid',
-            'date' => 'required|date',
+            'date' => 'required|date|before_or_equal:today',
             'attendances' => 'required|array',
             'attendances.*.enrollment_id' => 'required|uuid',
-            'attendances.*.status' => 'required|string',
-            'attendances.*.remarks' => 'nullable|string',
+            'attendances.*.status' => 'required|string|in:Presente,Ausente,Tardanza,Justificado',
         ]);
 
         // Validate enrollments belong to the course_assignment_id
         $enrollmentIds = collect($request->attendances)->pluck('enrollment_id');
+        $courseAssignment = \App\Models\CourseAssignment::findOrFail($request->course_assignment_id);
         $validEnrollments = Enrollment::whereIn('id', $enrollmentIds)
-            ->where('course_assignment_id', $request->course_assignment_id)
+            ->where('section_id', $courseAssignment->section_id)
             ->pluck('id');
 
         if ($validEnrollments->count() !== $enrollmentIds->count()) {
@@ -52,12 +50,12 @@ class AttendanceController extends Controller
         foreach ($request->attendances as $attendanceData) {
             $records[] = Attendance::updateOrCreate(
                 [
+                    'course_assignment_id' => $request->course_assignment_id,
                     'enrollment_id' => $attendanceData['enrollment_id'],
                     'date' => $request->date,
                 ],
                 [
                     'status' => $attendanceData['status'],
-                    'remarks' => $attendanceData['remarks'] ?? null,
                 ]
             );
         }

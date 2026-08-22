@@ -20,7 +20,7 @@ class Fee extends Model
     protected $fillable = [
         'id', 'tenant_id', 'student_id', 'title', 'description', 
         'amount', 'tax_amount', 'discount_amount', 'penalty_amount', 
-        'currency', 'due_date', 'status', 'metadata'
+        'currency', 'due_date', 'status', 'metadata', 'category', 'fee_type_id'
     ];
 
     protected function casts(): array

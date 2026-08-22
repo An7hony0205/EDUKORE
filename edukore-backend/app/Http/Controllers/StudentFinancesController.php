@@ -14,7 +14,9 @@ class StudentFinancesController extends Controller
         $tenantId = auth()->user()->tenant_id;
         
         // Ensure student exists and belongs to tenant
-        $student = Student::where('tenant_id', $tenantId)->findOrFail($id);
+        $student = Student::whereHas('user', function($q) use ($tenantId) {
+            $q->where('tenant_id', $tenantId);
+        })->findOrFail($id);
 
         $fees = Fee::with(['feeType', 'discounts', 'payments' => function ($query) {
                 // Return all payments including voided to maintain audit trail in UI

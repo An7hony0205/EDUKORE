@@ -2,6 +2,15 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\StudentFinancesController;
+use App\Http\Controllers\EventController;
+use App\Http\Controllers\EventParticipantController;
+use App\Http\Controllers\ParentDashboardController;
+use App\Http\Controllers\StudentDashboardController;
+use App\Http\Controllers\AnnouncementController;
+
+use App\Http\Controllers\GradeLevelController;
+use App\Http\Controllers\RubricController;
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AcademicYearController;
@@ -91,5 +100,14 @@ Route::prefix('v1')->group(function () {
         // Reports
         Route::get('reports/student-report-card/{studentId}', [ReportController::class, 'studentReportCard']);
         Route::get('reports/section/{sectionId}/report-cards', [ReportController::class, 'generateSectionPdfs']);
+        Route::get('reports/student-report-card/{studentId}/export', [ReportController::class, 'exportReportCardPdf']);
+        Route::get('reports/enrollments/csv', [ReportController::class, 'exportEnrollmentsCsv']);
+
+        // Phase 8, 9, 10 missing routes
+        Route::apiResource('events', \App\Http\Controllers\EventController::class);
+        Route::apiResource('event-participants', \App\Http\Controllers\EventParticipantController::class);
+        Route::get('parent-dashboard', [\App\Http\Controllers\ParentDashboardController::class, 'index']);
+        Route::get('student-dashboard', [\App\Http\Controllers\StudentDashboardController::class, 'index']);
+        Route::apiResource('announcements', \App\Http\Controllers\AnnouncementController::class);
     });
 });

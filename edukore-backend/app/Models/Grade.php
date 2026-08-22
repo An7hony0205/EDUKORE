@@ -48,4 +48,9 @@ class Grade extends Model
     {
         return $this->belongsTo(Enrollment::class);
     }
+
+    public function audits()
+    {
+        return $this->hasMany(GradeAudit::class);
+    }
 }

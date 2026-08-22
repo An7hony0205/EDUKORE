@@ -38,6 +38,11 @@ class Student extends Model
         return $this->hasMany(Enrollment::class);
     }
 
+    public function families(): BelongsToMany
+    {
+        return $this->belongsToMany(Family::class, 'family_students')->withPivot('relation_description')->withTimestamps();
+    }
+
     public function parents(): BelongsToMany
     {
         return $this->belongsToMany(ParentProfile::class, 'student_parents', 'student_id', 'parent_id');

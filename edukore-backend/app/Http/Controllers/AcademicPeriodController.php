@@ -27,6 +27,8 @@ class AcademicPeriodController extends Controller
             'end_date' => 'required|date|after_or_equal:start_date',
         ]);
 
+        $validated['tenant_id'] = $request->user()->tenant_id;
+
         $period = AcademicPeriod::create($validated);
 
         return response()->json($period, 201);

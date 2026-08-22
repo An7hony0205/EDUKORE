@@ -63,15 +63,16 @@ onMounted(() => {
           </div>
           
           <div class="relative z-10 pt-4 border-t border-white/10 mt-auto flex items-center justify-between">
-            <div class="flex -space-x-2">
-              <!-- Mock avatars for students -->
-              <div class="w-8 h-8 rounded-full bg-slate-700 border-2 border-gray-900 flex items-center justify-center text-[10px] font-bold text-white">JD</div>
-              <div class="w-8 h-8 rounded-full bg-indigo-700 border-2 border-gray-900 flex items-center justify-center text-[10px] font-bold text-white">AM</div>
-              <div class="w-8 h-8 rounded-full bg-slate-800 border-2 border-gray-900 flex items-center justify-center text-xs text-slate-400">+5</div>
+            <div class="flex items-center justify-between">
+              <div class="flex -space-x-2">
+                <div class="w-8 h-8 rounded-full bg-slate-700 border-2 border-slate-800 flex items-center justify-center text-[10px] font-bold">JD</div>
+                <div class="w-8 h-8 rounded-full bg-primary-600 border-2 border-slate-800 flex items-center justify-center text-[10px] font-bold">AM</div>
+                <div class="w-8 h-8 rounded-full bg-slate-600 border-2 border-slate-800 flex items-center justify-center text-[10px] font-bold">+5</div>
+              </div>
+              <button @click="$router.push('/teacher/dashboard')" class="text-sm font-medium hover:text-primary-300 transition-colors">
+                Ver panel docente &rarr;
+              </button>
             </div>
-            <button class="text-sm font-medium text-indigo-400 hover:text-indigo-300 transition-colors">
-              Ver detalles &rarr;
-            </button>
           </div>
         </div>
       </div>

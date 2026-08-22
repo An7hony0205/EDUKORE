@@ -40,7 +40,7 @@ class TeacherDashboardController extends Controller
         $assignment = CourseAssignment::with([
                 'course', 
                 'section.enrollments.student.user',
-                'section.enrollments.grades'
+                'section.enrollments.grades.audits'
             ])
             ->where('id', $id)
             ->where('teacher_id', $teacherId)

@@ -36,12 +36,17 @@ class GradeController extends Controller
         $evaluation = Evaluation::with('academicPeriod')->findOrFail($request->evaluation_id);
         
         if ($evaluation->academicPeriod && $evaluation->academicPeriod->is_locked) {
-            return response()->json(['message' => 'Cannot modify grades for a locked academic period.'], 403);
+            return response()->json(['message' => 'No se pueden modificar notas en un periodo académico bloqueado.'], 403);
+        }
+
+        if ($evaluation->status === 'CLOSED') {
+            return response()->json(['message' => 'No se pueden modificar notas de una evaluación CERRADA.'], 403);
         }
         
+        $courseAssignment = \App\Models\CourseAssignment::findOrFail($evaluation->course_assignment_id);
         $enrollmentIds = collect($request->grades)->pluck('enrollment_id');
         $validEnrollments = Enrollment::whereIn('id', $enrollmentIds)
-            ->where('course_assignment_id', $evaluation->course_assignment_id)
+            ->where('section_id', $courseAssignment->section_id)
             ->pluck('id');
 
         if ($validEnrollments->count() !== $enrollmentIds->count()) {
@@ -50,7 +55,19 @@ class GradeController extends Controller
 
         $records = [];
         foreach ($request->grades as $gradeData) {
-            $records[] = Grade::updateOrCreate(
+            $existing = Grade::where('evaluation_id', $request->evaluation_id)
+                ->where('enrollment_id', $gradeData['enrollment_id'])
+                ->first();
+
+            $oldScore = $existing ? $existing->score : null;
+
+            if ($evaluation->status === 'PUBLISHED' && $oldScore !== null && $oldScore != $gradeData['score']) {
+                if (empty($gradeData['reason'])) {
+                    return response()->json(['message' => 'Se requiere un motivo para modificar una calificación publicada.'], 422);
+                }
+            }
+
+            $grade = Grade::updateOrCreate(
                 [
                     'evaluation_id' => $request->evaluation_id,
                     'enrollment_id' => $gradeData['enrollment_id'],
@@ -61,6 +78,19 @@ class GradeController extends Controller
                     'feedback' => $gradeData['feedback'] ?? null,
                 ]
             );
+
+            // Audit
+            if ($oldScore !== null && $oldScore != $gradeData['score']) {
+                \App\Models\GradeAudit::create([
+                    'grade_id' => $grade->id,
+                    'user_id' => $request->user()->id,
+                    'old_score' => $oldScore,
+                    'new_score' => $gradeData['score'],
+                    'reason' => $gradeData['reason'] ?? 'Actualización en borrador'
+                ]);
+            }
+
+            $records[] = $grade;
         }
 
         return response()->json([

@@ -9,23 +9,26 @@ class ParentPortalController extends Controller
 {
     public function myChildren(Request $request)
     {
-        $parent = ParentProfile::where('user_id', $request->user()->id)->firstOrFail();
+        $user = $request->user();
         
-        $parent->load([
-            'students.user'
-        ]);
+        $students = \App\Models\Student::whereHas('families.members', function ($q) use ($user) {
+            $q->where('user_id', $user->id)->where('can_view_info', true);
+        })->with('user')->get();
         
         return response()->json([
-            'children' => $parent->students
+            'children' => $students
         ]);
     }
 
     public function childDetail(Request $request, $studentId)
     {
-        $parent = ParentProfile::where('user_id', $request->user()->id)->firstOrFail();
+        $user = $request->user();
         
-        // Ensure student belongs to parent
-        $student = $parent->students()->where('students.id', $studentId)->firstOrFail();
+        // Ensure student belongs to parent's family
+        $student = \App\Models\Student::where('id', $studentId)
+            ->whereHas('families.members', function ($q) use ($user) {
+                $q->where('user_id', $user->id)->where('can_view_info', true);
+            })->firstOrFail();
 
         $student->load([
             'enrollments.section.courseAssignments.course',

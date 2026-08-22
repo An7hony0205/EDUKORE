@@ -21,7 +21,7 @@ class EnrollmentController extends Controller
             ->whereHas('section.gradeLevel.level.academicYear', function ($query) use ($tenantId) {
                 $query->where('tenant_id', $tenantId);
             })
-            ->orderBy('enrolled_at', 'desc')
+            ->orderBy('created_at', 'desc')
             ->get();
 
         return response()->json($enrollments);
@@ -77,7 +77,7 @@ class EnrollmentController extends Controller
             'id'          => \Illuminate\Support\Str::uuid(),
             'tenant_id'   => $tenantId,
             'status'      => $validated['status'] ?? 'preinscrito',
-            'enrolled_at' => now(),
+            
             ...$validated,
         ]);
 

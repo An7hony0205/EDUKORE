@@ -16,6 +16,7 @@ class Tenant extends Model
         'subdomain',
         'is_active',
         'active_modules',
+        'institution_type'
     ];
 
     protected $casts = [

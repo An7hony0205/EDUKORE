@@ -80,4 +80,9 @@ class User extends Authenticatable
     {
         return $this->hasOne(ParentProfile::class);
     }
+
+    public function familyMembers()
+    {
+        return $this->hasMany(FamilyMember::class);
+    }
 }
