@@ -34,7 +34,18 @@ class GradeController extends Controller
         ]);
 
         $evaluation = Evaluation::with('academicPeriod')->findOrFail($request->evaluation_id);
-        
+
+        // ── PARCHE IDOR: Validación de propiedad para docentes ─────────────────
+        // El middleware de ruta confirma que el usuario es teacher o admin,
+        // pero no que esta evaluación le pertenece. Un docente no puede
+        // modificar calificaciones de clases asignadas a otro docente.
+        if (auth()->user()->hasRole('teacher')) {
+            $ownsCourse = \App\Models\CourseAssignment::where('id', $evaluation->course_assignment_id)
+                ->where('teacher_id', auth()->id())
+                ->exists();
+            abort_if(!$ownsCourse, 403, 'No tienes permiso para modificar las calificaciones de esta clase.');
+        }
+
         if ($evaluation->academicPeriod && $evaluation->academicPeriod->is_locked) {
             return response()->json(['message' => 'No se pueden modificar notas en un periodo académico bloqueado.'], 403);
         }
@@ -42,7 +53,7 @@ class GradeController extends Controller
         if ($evaluation->status === 'CLOSED') {
             return response()->json(['message' => 'No se pueden modificar notas de una evaluación CERRADA.'], 403);
         }
-        
+
         $courseAssignment = \App\Models\CourseAssignment::findOrFail($evaluation->course_assignment_id);
         $enrollmentIds = collect($request->grades)->pluck('enrollment_id');
         $validEnrollments = Enrollment::whereIn('id', $enrollmentIds)

@@ -33,15 +33,15 @@ const breadcrumbs = computed(() => {
 </script>
 
 <template>
-  <nav class="flex text-sm text-slate-400 font-medium mb-6" aria-label="Breadcrumb">
+  <nav class="flex text-sm text-slate-500 dark:text-slate-400 font-medium mb-6" aria-label="Breadcrumb">
     <ol class="inline-flex items-center space-x-1 md:space-x-3">
       <li v-for="(crumb, index) in breadcrumbs" :key="index" class="inline-flex items-center">
-        <router-link v-if="index < breadcrumbs.length - 1" :to="crumb.path" class="inline-flex items-center hover:text-white transition-colors">
+        <router-link v-if="index < breadcrumbs.length - 1" :to="crumb.path" class="inline-flex items-center hover:text-slate-900 dark:hover:text-white transition-colors">
           {{ crumb.name }}
         </router-link>
-        <span v-else class="text-white">{{ crumb.name }}</span>
+        <span v-else class="text-slate-900 dark:text-white">{{ crumb.name }}</span>
         
-        <svg v-if="index < breadcrumbs.length - 1" class="w-4 h-4 text-slate-500 mx-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg v-if="index < breadcrumbs.length - 1" class="w-4 h-4 text-slate-400 dark:text-slate-500 mx-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
         </svg>
       </li>

@@ -75,7 +75,7 @@ class StudentController extends Controller
                 'email' => $request->input('student.email'),
                 'password' => Hash::make('password123'), // Default password
             ]);
-            $studentUser->assignRole('student');
+            $studentUser->assignRole('Student');
 
             // 2. Create Student Profile
             $student = Student::create([
@@ -100,7 +100,7 @@ class StudentController extends Controller
                         'email' => $parentData['email'],
                         'password' => Hash::make('password123'),
                     ]);
-                    $parentUser->assignRole('parent');
+                    $parentUser->assignRole('Parent');
                 }
 
                 $parentProfile = ParentProfile::firstOrCreate(
@@ -108,7 +108,7 @@ class StudentController extends Controller
                     ['id' => Str::uuid(), 'phone' => $parentData['phone'], 'address' => $parentData['address'] ?? null]
                 );
 
-                $parentIds[$parentProfile->id] = ['relationship' => $parentData['relationship']];
+                $parentIds[(string) $parentProfile->id] = ['relationship_type' => $parentData['relationship']];
             }
 
             // 4. Attach Parents to Student
@@ -152,4 +152,31 @@ class StudentController extends Controller
             'data' => $student
         ]);
     }
+
+    public function attendance($id)
+    {
+        $student = Student::findOrFail($id);
+        
+        $attendance = \App\Models\Attendance::whereHas('enrollment', function ($q) use ($id) {
+            $q->where('student_id', $id);
+        })->with('courseAssignment.course')->orderBy('date', 'desc')->get();
+
+        return response()->json(['data' => $attendance]);
+    }
+
+
+    public function audit($id)
+    {
+        $student = Student::findOrFail($id);
+        
+        // Get activity logs for the student model
+        $logs = \Spatie\Activitylog\Models\Activity::with('causer')
+            ->where('subject_type', Student::class)
+            ->where('subject_id', $id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json(['data' => $logs]);
+    }
+
 }

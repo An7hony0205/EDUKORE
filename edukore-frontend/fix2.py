@@ -1,0 +1,52 @@
+import sys
+import re
+
+with open('src/views/StudentProfile.vue', 'r', encoding='utf-8') as f:
+    content = f.read()
+
+# I will find the function fetchStudentBase and everything until isWizardOpen
+regex = re.compile(r'const fetchStudentBase = async \(\) => \{.*?const isWizardOpen = ref\(false\)', re.DOTALL)
+
+replacement = """const fetchStudentBase = async () => {
+  try {
+    const response = await api.get(`/students/${route.params.id}`)
+    student.value = response.data.data
+  } catch (error) {
+    console.error("Error loading student data", error)
+  } finally {
+    loading.value = false
+  }
+}
+
+const loadTab = async (tab) => {
+  activeTab.value = tab
+  if (tab === 'academic' && !academicData.value) {
+    try {
+      const res = await api.get(`/students/${route.params.id}/academic`)
+      academicData.value = res.data.data
+    } catch (error) {
+      console.error("Failed to fetch academic history", error)
+    }
+  } else if (tab === 'finances' && !financesData.value) {
+    try {
+      const res = await api.get(`/students/${route.params.id}/finances`)
+      financesData.value = res.data
+    } catch (error) {
+      console.error("Failed to fetch finances data", error)
+    }
+  } else if (tab === 'attendance' && !attendanceData.value) {
+    try {
+      const res = await api.get(`/students/${route.params.id}/attendance`)
+      attendanceData.value = res.data.data
+    } catch (error) {
+      console.error("Failed to fetch attendance data", error)
+    }
+  }
+}
+
+const isWizardOpen = ref(false)"""
+
+content = regex.sub(replacement, content, count=1)
+
+with open('src/views/StudentProfile.vue', 'w', encoding='utf-8') as f:
+    f.write(content)

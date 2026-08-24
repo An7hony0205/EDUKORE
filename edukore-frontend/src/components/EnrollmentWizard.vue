@@ -178,7 +178,7 @@ onMounted(async () => {
               <button 
                 v-for="year in academicYears" :key="year.id"
                 @click="selectedYear = year.id"
-                :class="['p-4 rounded-xl border text-left transition-all', selectedYear === year.id ? 'bg-indigo-500/20 border-indigo-500 text-white' : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10']"
+                :class="['p-4 rounded-xl border text-left transition-all', selectedYear === year.id ? 'bg-indigo-500/20 border-indigo-500 text-white' : 'bg-white/5 border-white/10 text-slate-500 dark:text-slate-400 hover:bg-white/10']"
               >
                 <div class="font-medium text-lg">{{ year.year_name }}</div>
                 <div class="text-xs text-slate-400 mt-1">Inicio: {{ year.start_date }}</div>
@@ -194,7 +194,7 @@ onMounted(async () => {
               <button 
                 v-for="level in availableLevels" :key="level.id"
                 @click="selectedLevel = level.id"
-                :class="['p-4 rounded-xl border text-left transition-all', selectedLevel === level.id ? 'bg-indigo-500/20 border-indigo-500 text-white' : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10']"
+                :class="['p-4 rounded-xl border text-left transition-all', selectedLevel === level.id ? 'bg-indigo-500/20 border-indigo-500 text-white' : 'bg-white/5 border-white/10 text-slate-500 dark:text-slate-400 hover:bg-white/10']"
               >
                 <div class="font-medium text-lg">{{ level.name }}</div>
               </button>
@@ -209,7 +209,7 @@ onMounted(async () => {
               <button 
                 v-for="grade in availableGrades" :key="grade.id"
                 @click="selectedGrade = grade.id"
-                :class="['p-4 rounded-xl border text-center transition-all', selectedGrade === grade.id ? 'bg-indigo-500/20 border-indigo-500 text-white' : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10']"
+                :class="['p-4 rounded-xl border text-center transition-all', selectedGrade === grade.id ? 'bg-indigo-500/20 border-indigo-500 text-white' : 'bg-white/5 border-white/10 text-slate-500 dark:text-slate-400 hover:bg-white/10']"
               >
                 <div class="font-medium">{{ grade.name }}</div>
               </button>
@@ -224,7 +224,7 @@ onMounted(async () => {
               <button 
                 v-for="section in sections" :key="section.id"
                 @click="selectedSection = section.id"
-                :class="['p-4 rounded-xl border text-center transition-all', selectedSection === section.id ? 'bg-indigo-500/20 border-indigo-500 text-white' : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10']"
+                :class="['p-4 rounded-xl border text-center transition-all', selectedSection === section.id ? 'bg-indigo-500/20 border-indigo-500 text-white' : 'bg-white/5 border-white/10 text-slate-500 dark:text-slate-400 hover:bg-white/10']"
               >
                 <div class="font-bold text-xl">{{ section.name }}</div>
                 <div class="text-xs text-slate-400 mt-1">Capacidad: {{ section.capacity }}</div>
@@ -267,7 +267,7 @@ onMounted(async () => {
 
       <!-- Footer Actions -->
       <div class="p-6 border-t border-white/10 flex justify-between bg-slate-800/30">
-        <button @click="prevStep" :class="['px-6 py-2 rounded-lg text-sm font-medium transition-colors', step > 1 ? 'text-slate-300 hover:bg-white/5' : 'text-slate-600 cursor-not-allowed']" :disabled="step === 1 || submitting">
+        <button @click="prevStep" :class="['px-6 py-2 rounded-lg text-sm font-medium transition-colors', step > 1 ? 'text-slate-500 dark:text-slate-400 hover:bg-white/5' : 'text-slate-600 cursor-not-allowed']" :disabled="step === 1 || submitting">
           Atrás
         </button>
         
@@ -276,7 +276,7 @@ onMounted(async () => {
           (step === 3 && !selectedLevel) || 
           (step === 4 && !selectedGrade) || 
           (step === 5 && !selectedSection)
-        " class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+        " class="bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200 px-6 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
           Siguiente
         </button>
         

@@ -29,6 +29,7 @@ class Fee extends Model
             'due_date' => 'date',
             'metadata' => 'array',
             'amount' => 'decimal:2',
+            'total_amount' => 'decimal:2',
             'tax_amount' => 'decimal:2',
             'discount_amount' => 'decimal:2',
             'penalty_amount' => 'decimal:2',

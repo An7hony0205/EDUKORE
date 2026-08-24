@@ -36,8 +36,21 @@ class AttendanceController extends Controller
         ]);
 
         // Validate enrollments belong to the course_assignment_id
-        $enrollmentIds = collect($request->attendances)->pluck('enrollment_id');
+        $enrollmentIds    = collect($request->attendances)->pluck('enrollment_id');
         $courseAssignment = \App\Models\CourseAssignment::findOrFail($request->course_assignment_id);
+
+        // ── PARCHE IDOR: Validación de propiedad para docentes ─────────────────
+        // El middleware de ruta confirma que el usuario es teacher o admin,
+        // pero no valida que la clase le pertenezca. Un docente malicioso
+        // no debe poder registrar asistencia en clases de otro docente.
+        if (auth()->user()->hasRole('teacher')) {
+            abort_if(
+                $courseAssignment->teacher_id !== auth()->id(),
+                403,
+                'No tienes permiso para registrar asistencia en esta clase.'
+            );
+        }
+
         $validEnrollments = Enrollment::whereIn('id', $enrollmentIds)
             ->where('section_id', $courseAssignment->section_id)
             ->pluck('id');
@@ -47,15 +60,18 @@ class AttendanceController extends Controller
         }
 
         $records = [];
+        $createdBy = $request->user()->id; // Autoría legal: docente que ejecuta el registro
+
         foreach ($request->attendances as $attendanceData) {
             $records[] = Attendance::updateOrCreate(
                 [
                     'course_assignment_id' => $request->course_assignment_id,
-                    'enrollment_id' => $attendanceData['enrollment_id'],
-                    'date' => $request->date,
+                    'enrollment_id'        => $attendanceData['enrollment_id'],
+                    'date'                 => $request->date,
                 ],
                 [
-                    'status' => $attendanceData['status'],
+                    'status'     => $attendanceData['status'],
+                    'created_by' => $createdBy, // Siempre se registra quién hizo el último guardado
                 ]
             );
         }

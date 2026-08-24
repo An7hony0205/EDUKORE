@@ -5,10 +5,14 @@ import { useAuthStore } from '../stores/auth'
 import GlobalSearch from '../components/ui/GlobalSearch.vue'
 import Breadcrumbs from '../components/ui/Breadcrumbs.vue'
 
+import api from '../api/axios'
+
 const router = useRouter()
 const auth = useAuthStore()
 
 const isSidebarOpen = ref(false)
+const tenantLogo = ref(null)
+
 const isMobileClose = () => {
   isSidebarOpen.value = false
 }
@@ -16,6 +20,38 @@ const isMobileClose = () => {
 onMounted(async () => {
   if (auth.token && !auth.user) {
     await auth.fetchUser()
+  }
+  
+  if (auth.token) {
+    try {
+      const res = await api.get('/settings')
+      if (res.data && res.data.logo_url) {
+        tenantLogo.value = `http://localhost:8000/storage/${res.data.logo_url}`
+      }
+    } catch (e) {
+      console.error('Error fetching layout settings', e)
+    }
+  }
+})
+
+const isDarkMode = ref(localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches))
+
+const toggleDarkMode = () => {
+  isDarkMode.value = !isDarkMode.value
+  if (isDarkMode.value) {
+    document.documentElement.classList.add('dark')
+    localStorage.setItem('theme', 'dark')
+  } else {
+    document.documentElement.classList.remove('dark')
+    localStorage.setItem('theme', 'light')
+  }
+}
+
+onMounted(() => {
+  if (isDarkMode.value) {
+    document.documentElement.classList.add('dark')
+  } else {
+    document.documentElement.classList.remove('dark')
   }
 })
 
@@ -36,65 +72,62 @@ const initials = () => {
 </script>
 
 <template>
-  <div class="flex h-screen overflow-hidden bg-brand-dark">
+  <div class="flex h-screen overflow-hidden bg-slate-50 dark:bg-brand-dark">
     
     <!-- Mobile overlay -->
     <div v-if="isSidebarOpen" @click="isSidebarOpen = false" class="fixed inset-0 bg-black/60 z-20 md:hidden backdrop-blur-sm transition-opacity"></div>
 
-    <!-- ── Sidebar ──────────────────────────────────────────────────────── -->
+    <!-- ── Sidebar ────────────────────────────────────────────────── -->
     <aside
       :class="[
         'fixed inset-y-0 left-0 z-30 w-64 shrink-0 border-r flex flex-col transition-transform duration-300 md:relative md:translate-x-0',
         isSidebarOpen ? 'translate-x-0' : '-translate-x-full',
-        'bg-brand-surface border-brand-border'
+        'bg-white dark:bg-brand-surface border-slate-200 dark:border-brand-border'
       ]"
     >
       <!-- Logo area -->
-      <div class="flex items-center justify-between px-6 py-6 border-b border-brand-border">
+      <div class="flex items-center justify-between px-6 py-6 border-b border-slate-200 dark:border-brand-border">
         <div class="flex items-center gap-3">
-          <div class="w-8 h-8 rounded-lg flex items-center justify-center bg-primary-600">
-            <svg width="18" height="18" viewBox="0 0 48 48" fill="none">
-              <path d="M12 24L24 14L36 24L36 36L24 30L12 36Z" fill="white" fill-opacity="0.9"/>
-              <circle cx="24" cy="22" r="4" fill="white"/>
+          <div v-if="!tenantLogo" class="w-8 h-8 rounded-lg flex items-center justify-center bg-slate-900 dark:bg-white text-white dark:text-slate-900">
+            <svg width="18" height="18" viewBox="0 0 48 48" fill="currentColor">
+              <path d="M12 24L24 14L36 24L36 36L24 30L12 36Z" fill-opacity="0.9"/>
+              <circle cx="24" cy="22" r="4"/>
             </svg>
           </div>
-          <span class="text-base font-bold text-slate-100">
-            Edu<span class="text-primary-400">Kore</span>
+          <div v-else class="w-8 h-8 rounded-lg flex items-center justify-center bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-brand-border overflow-hidden">
+            <img :src="tenantLogo" alt="Logo Institución" class="w-full h-full object-cover" />
+          </div>
+          <span class="text-base font-bold text-slate-900 dark:text-slate-100">
+            {{ auth.user?.tenant?.name || 'EduKore' }}
           </span>
         </div>
         <!-- Close button for mobile -->
-        <button @click="isSidebarOpen = false" class="md:hidden text-slate-400 hover:text-white">
+        <button @click="isSidebarOpen = false" class="md:hidden text-slate-400 hover:text-slate-900 dark:hover:text-white">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
       </div>
 
-        <!-- Nav items -->
-      <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+      <!-- Navigation -->
+      <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+        <!-- Dashboard -->
         <router-link to="/dashboard" custom v-slot="{ isActive, navigate }">
-          <NavItem icon="grid" label="Dashboard" :active="isActive" @click="navigate(); isMobileClose()" />
+          <NavItem icon="grid" label="Panel Principal" :active="isActive" @click="navigate(); isMobileClose()" />
         </router-link>
 
-        <!-- GESTIÓN ESCOLAR (Admin/Teacher) -->
-        <template v-if="auth.user?.role?.name === 'Admin' || auth.user?.role?.name === 'Teacher'">
+        <!-- ACADÉMICO -->
+        <template v-if="auth.user?.role?.name === 'admin' || auth.user?.role?.name === 'teacher'">
           <div class="pt-4 pb-2">
-            <p class="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Gestión Escolar</p>
+            <p class="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Académico</p>
           </div>
           <router-link to="/students" custom v-slot="{ isActive, navigate }">
             <NavItem icon="users" label="Estudiantes" :active="isActive" @click="navigate(); isMobileClose()" />
           </router-link>
-          <router-link v-if="auth.user?.tenant?.active_modules?.academic !== false" to="/courses" custom v-slot="{ isActive, navigate }">
+          <router-link v-if="auth.user?.role?.name === 'admin'" to="/teachers" custom v-slot="{ isActive, navigate }">
+            <NavItem icon="users" label="Docentes" :active="isActive" @click="navigate(); isMobileClose()" />
+          </router-link>
+          <router-link to="/course-assignments" custom v-slot="{ isActive, navigate }">
             <NavItem icon="book-open" label="Cursos" :active="isActive" @click="navigate(); isMobileClose()" />
           </router-link>
-          <router-link v-if="auth.user?.role?.name === 'Admin'" to="/course-assignments" custom v-slot="{ isActive, navigate }">
-            <NavItem icon="clipboard" label="Asignación Docente" :active="isActive" @click="navigate(); isMobileClose()" />
-          </router-link>
-        </template>
-
-        <!-- SEGUIMIENTO ACADÉMICO -->
-        <template v-if="auth.user?.role?.name === 'Admin' || auth.user?.role?.name === 'Teacher'">
-          <div class="pt-4 pb-2">
-            <p class="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Seguimiento Acad.</p>
-          </div>
           <!-- Links for attendance, grades... handled via courses mostly for teachers, but reports here -->
           <router-link to="/reports" custom v-slot="{ isActive, navigate }">
             <NavItem icon="bar-chart-2" label="Reportes" :active="isActive" @click="navigate(); isMobileClose()" />
@@ -102,23 +135,23 @@ const initials = () => {
         </template>
 
         <!-- FINANZAS -->
-        <template v-if="auth.user?.role?.name === 'Admin' && auth.user?.tenant?.active_modules?.finances">
+        <template v-if="auth.user?.role?.name === 'admin' && auth.user?.tenant?.active_modules?.finances">
           <div class="pt-4 pb-2">
             <p class="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Finanzas & Comunidad</p>
           </div>
           <router-link to="/finances" custom v-slot="{ isActive, navigate }">
             <NavItem icon="credit-card" label="Pagos y Cobros" :active="isActive" @click="navigate(); isMobileClose()" />
           </router-link>
-          <router-link to="/community-events" custom v-slot="{ isActive, navigate }">
+          <router-link to="/community-events" custom v-slot="{ isActive, navigate }" v-if="false">
             <NavItem icon="users" label="Faenas y Eventos" :active="isActive" @click="navigate(); isMobileClose()" />
           </router-link>
-          <router-link to="/announcements" custom v-slot="{ isActive, navigate }">
+          <router-link to="/announcements" custom v-slot="{ isActive, navigate }" v-if="false">
             <NavItem icon="clipboard" label="Circulares" :active="isActive" @click="navigate(); isMobileClose()" />
           </router-link>
         </template>
 
         <!-- ADMINISTRACIÓN -->
-        <template v-if="auth.user?.role?.name === 'Admin'">
+        <template v-if="auth.user?.role?.name === 'admin'">
           <div class="pt-4 pb-2">
             <p class="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Administración</p>
           </div>
@@ -135,10 +168,10 @@ const initials = () => {
       </nav>
 
       <!-- Bottom user area -->
-      <div class="px-4 py-4 border-t border-brand-border">
+      <div class="px-4 py-4 border-t border-slate-200 dark:border-brand-border">
         <button
           @click="handleLogout"
-          class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 text-slate-400 hover:bg-red-500/10 hover:text-red-400"
+          class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 text-slate-500 dark:text-slate-400 hover:bg-red-50 hover:dark:bg-red-500/10 hover:text-red-600 hover:dark:text-red-400"
         >
           <!-- Logout icon -->
           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -151,15 +184,15 @@ const initials = () => {
       </div>
     </aside>
 
-    <!-- ── Main content ──────────────────────────────────────────────────── -->
+    <!-- ── Main content ────────────────────────────────────────────────── -->
     <main class="flex-1 flex flex-col min-w-0 overflow-hidden">
 
       <!-- Top bar -->
       <header
-        class="flex items-center justify-between px-4 md:px-8 py-4 border-b border-brand-border shrink-0 z-10 bg-brand-dark/80 backdrop-blur-md"
+        class="flex items-center justify-between px-4 md:px-8 py-4 border-b border-slate-200 dark:border-brand-border shrink-0 z-10 bg-white/80 dark:bg-brand-dark/80 backdrop-blur-md"
       >
         <div class="flex items-center gap-4 flex-1">
-          <button @click="isSidebarOpen = true" class="md:hidden text-slate-400 hover:text-white p-2 -ml-2 rounded-lg hover:bg-white/5 transition-colors">
+          <button @click="isSidebarOpen = true" class="md:hidden text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white p-2 -ml-2 rounded-lg hover:bg-slate-200 dark:hover:bg-white/5 transition-colors">
              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
           </button>
           
@@ -169,16 +202,21 @@ const initials = () => {
           </div>
         </div>
 
-        <!-- Avatar -->
-        <div class="flex items-center gap-3 ml-4">
-          <div
-            class="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold text-white shrink-0 bg-primary-600"
-          >
-            {{ initials() }}
-          </div>
-          <div class="hidden sm:block">
-            <p class="text-sm font-medium leading-tight text-slate-200">{{ auth.user?.name ?? '—' }}</p>
-            <p class="text-xs leading-tight truncate max-w-[120px] text-slate-400">{{ auth.user?.role?.name ?? 'Usuario' }}</p>
+        <!-- Theme Toggle & Avatar -->
+        <div class="flex items-center gap-4 ml-4">
+          <button @click="toggleDarkMode" class="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 transition-colors">
+            <svg v-if="isDarkMode" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+            <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+          </button>
+          
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold text-white shrink-0 bg-slate-900 dark:bg-white dark:text-slate-900">
+              {{ initials() }}
+            </div>
+            <div class="hidden sm:block">
+              <p class="text-sm font-medium leading-tight dark:text-slate-200 text-slate-900">{{ auth.user?.name ?? '—' }}</p>
+              <p class="text-xs leading-tight truncate max-w-[120px] dark:text-slate-400 text-slate-500">{{ auth.user?.role?.name ?? 'Usuario' }}</p>
+            </div>
           </div>
         </div>
       </header>
@@ -230,10 +268,12 @@ export default defineComponent({
       props: { icon: String, label: String, active: Boolean },
       setup(props) {
         return () => h('button', {
-          class: 'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200',
-          style: props.active
-            ? 'background: rgba(99,102,241,0.15); color: #818cf8;'
-            : 'color: #64748b;',
+          class: [
+            'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200',
+            props.active
+              ? 'bg-slate-200 text-slate-900 dark:bg-slate-800 dark:text-white'
+              : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
+          ]
         }, [
           FeatherIcon(props.icon, 16),
           h('span', props.label),

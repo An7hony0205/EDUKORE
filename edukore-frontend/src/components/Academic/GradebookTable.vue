@@ -180,7 +180,7 @@ const createEvaluation = async () => {
         {{ saveStatus }}
       </div>
       <div>
-        <button @click="createEvaluation" class="bg-primary-600 hover:bg-primary-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+        <button @click="createEvaluation" class="bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
           + Nueva Evaluación
         </button>
       </div>
@@ -188,7 +188,7 @@ const createEvaluation = async () => {
 
     <!-- Table Wrapper -->
     <div class="flex-grow overflow-auto border border-brand-border rounded-xl bg-brand-surface">
-      <table class="w-full text-left text-sm text-slate-300">
+      <table class="w-full text-left text-sm text-slate-500 dark:text-slate-400">
         <thead class="text-xs text-slate-400 uppercase bg-brand-muted sticky top-0 z-10">
           <tr>
             <th scope="col" class="px-6 py-4 font-medium border-b border-r border-brand-border bg-brand-surface sticky left-0 z-20">
@@ -244,7 +244,7 @@ const createEvaluation = async () => {
                 min="0"
                 :disabled="ev.status === 'CLOSED' || (ev.academic_period && ev.academic_period.is_locked)"
                 :class="[
-                  'w-full h-full min-h-[56px] px-4 py-2 bg-transparent text-white border-none focus:ring-2 focus:ring-inset focus:ring-primary-500 hover:bg-white/5 outline-none text-center',
+                  'w-full h-full min-h-[56px] px-4 py-2 bg-transparent text-white border-none focus:ring-2 focus:ring-inset focus:ring-slate-500 dark:focus:ring-slate-400 hover:bg-white/5 outline-none text-center',
                   (ev.status === 'CLOSED' || (ev.academic_period && ev.academic_period.is_locked)) ? 'opacity-50 cursor-not-allowed bg-red-900/10 text-rose-300' : ''
                 ]"
                 :value="gradesState[enrollment.id][ev.id]"

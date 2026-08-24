@@ -19,7 +19,7 @@ const statuses = [
   { code: 'Presente', label: 'P', color: 'bg-emerald-500 hover:bg-emerald-600 text-white', tooltip: 'Presente' },
   { code: 'Tardanza', label: 'T', color: 'bg-amber-500 hover:bg-amber-600 text-white', tooltip: 'Tardanza' },
   { code: 'Ausente', label: 'A', color: 'bg-red-500 hover:bg-red-600 text-white', tooltip: 'Ausente' },
-  { code: 'Justificado', label: 'J', color: 'bg-indigo-500 hover:bg-indigo-600 text-white', tooltip: 'Justificado' }
+  { code: 'Justificado', label: 'J', color: 'bg-indigo-500 hover:bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200 text-white', tooltip: 'Justificado' }
 ]
 
 const loadAttendance = async () => {
@@ -119,14 +119,14 @@ const saveBulk = async () => {
     <!-- Header Controls -->
     <div class="flex justify-between items-center">
         <div class="flex items-center gap-4">
-            <label class="text-slate-300 font-medium">Fecha:</label>
+            <label class="text-slate-500 dark:text-slate-400 font-medium">Fecha:</label>
             <input 
                 type="date" 
                 v-model="selectedDate" 
                 :max="today"
-                class="bg-brand-surface border border-brand-border rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 outline-none"
+                class="bg-brand-surface border border-brand-border rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-slate-500 dark:focus:ring-slate-400 outline-none"
             />
-            <button @click="markAllPresent" class="bg-primary-600 hover:bg-primary-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+            <button @click="markAllPresent" class="bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                 Marcar a todos como Presentes
             </button>
         </div>
@@ -145,7 +145,7 @@ const saveBulk = async () => {
 
     <!-- Student List -->
     <div class="flex-grow overflow-auto border border-brand-border rounded-xl bg-brand-surface">
-        <table class="w-full text-left text-sm text-slate-300">
+        <table class="w-full text-left text-sm text-slate-500 dark:text-slate-400">
             <thead class="text-xs text-slate-400 uppercase bg-brand-muted sticky top-0 z-10 border-b border-brand-border">
                 <tr>
                     <th scope="col" class="px-6 py-4 font-medium">Estudiante</th>

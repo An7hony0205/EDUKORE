@@ -8,20 +8,20 @@ import TeacherDashboard from './TeacherDashboard.vue'
 const auth = useAuthStore()
 
 const currentRole = computed(() => {
-  return auth.user?.role?.name || 'Student'
+  return auth.user?.role?.name || 'student'
 })
 </script>
 
 <template>
   <DashboardLayout>
-    <template v-if="currentRole === 'Admin'">
+    <template v-if="currentRole === 'admin'">
       <AdminDashboard />
     </template>
-    <template v-else-if="currentRole === 'Teacher'">
+    <template v-else-if="currentRole === 'teacher'">
       <TeacherDashboard />
     </template>
     <template v-else>
-      <div class="p-8 text-center text-slate-400">
+      <div class="p-8 text-center text-slate-500 dark:text-slate-400">
         Bienvenido a EDUKORE.
       </div>
     </template>

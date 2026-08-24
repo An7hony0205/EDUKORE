@@ -17,7 +17,6 @@ class TenantSettingController extends Controller
         $setting = TenantSetting::firstOrCreate(
             ['tenant_id' => $tenantId],
             [
-                'theme_color' => '#4f46e5',
                 'timezone' => 'UTC',
                 'grading_scale' => 'numeric_20',
                 'tax_percentage' => 0,
@@ -37,11 +36,11 @@ class TenantSettingController extends Controller
         $setting = TenantSetting::firstOrCreate(['tenant_id' => $tenantId]);
 
         $validated = $request->validate([
-            'theme_color' => 'nullable|string',
             'timezone' => 'nullable|string',
             'grading_scale' => 'nullable|string',
             'tax_percentage' => 'nullable|numeric|min:0',
             'currency_default' => 'nullable|string|size:3',
+            'logo' => 'nullable|image|mimes:jpg,png,jpeg,svg|max:2048'
         ]);
 
         if ($request->hasFile('logo')) {

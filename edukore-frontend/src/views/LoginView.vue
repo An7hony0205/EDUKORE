@@ -162,7 +162,7 @@ async function handleLogin() {
           <button
             type="submit"
             :disabled="auth.isLoading"
-            class="relative w-full flex items-center justify-center gap-2 rounded-xl py-3 px-6 text-sm font-semibold text-white transition-all duration-200 overflow-hidden bg-primary-600 hover:bg-primary-500 shadow-[0_4px_20px_rgba(99,102,241,0.35)] hover:shadow-[0_6px_28px_rgba(99,102,241,0.55)]"
+            class="relative w-full flex items-center justify-center gap-2 rounded-xl py-3 px-6 text-sm font-semibold transition-all duration-200 overflow-hidden bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
           >
             <!-- Spinner -->
             <svg

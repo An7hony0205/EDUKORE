@@ -22,8 +22,14 @@ class Family extends Model
         return $this->hasMany(FamilyMember::class);
     }
 
+    /**
+     * Estudiantes vinculados a esta familia.
+     * is_primary indica si esta familia es la familia principal del estudiante.
+     */
     public function students()
     {
-        return $this->belongsToMany(Student::class, 'family_students')->withPivot('relation_description')->withTimestamps();
+        return $this->belongsToMany(Student::class, 'family_students')
+            ->withPivot(['relation_description', 'is_primary'])
+            ->withTimestamps();
     }
 }

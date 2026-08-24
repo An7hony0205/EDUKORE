@@ -24,10 +24,10 @@ class RolesAndPermissionsSeeder extends Seeder
             'grades.create', 'grades.read', 'grades.update', 'grades.delete',
             // Académicos: Asistencias
             'attendance.create', 'attendance.read', 'attendance.update', 'attendance.delete',
-            
+
             // Finanzas
             'finance.read', 'finance.issue_fee', 'finance.register_payment',
-            
+
             // Configuración
             'settings.manage'
         ];
@@ -37,13 +37,14 @@ class RolesAndPermissionsSeeder extends Seeder
         }
 
         // 2. Definir Roles y asignar permisos
+        // NOTA: Nombres en inglés/snake_case para coincidir con el frontend y las guardas del router.
 
-        // SuperAdmin - Todo
-        $roleSuperAdmin = Role::firstOrCreate(['name' => 'SuperAdmin']);
+        // super_admin - Todo
+        $roleSuperAdmin = Role::firstOrCreate(['name' => 'super_admin']);
         $roleSuperAdmin->givePermissionTo(Permission::all());
 
-        // Administrador (Coordinador de colegio)
-        $roleAdmin = Role::firstOrCreate(['name' => 'Admin']);
+        // admin (Coordinador de colegio)
+        $roleAdmin = Role::firstOrCreate(['name' => 'admin']);
         $roleAdmin->givePermissionTo([
             'courses.create', 'courses.read', 'courses.update', 'courses.delete',
             'grades.read', 'attendance.read',
@@ -51,22 +52,22 @@ class RolesAndPermissionsSeeder extends Seeder
             'settings.manage'
         ]);
 
-        // Docente
-        $roleTeacher = Role::firstOrCreate(['name' => 'Docente']);
+        // teacher (Docente)
+        $roleTeacher = Role::firstOrCreate(['name' => 'teacher']);
         $roleTeacher->givePermissionTo([
             'courses.read',
             'grades.create', 'grades.read', 'grades.update',
             'attendance.create', 'attendance.read', 'attendance.update',
         ]);
 
-        // Estudiante
-        $roleStudent = Role::firstOrCreate(['name' => 'Estudiante']);
+        // student (Estudiante)
+        $roleStudent = Role::firstOrCreate(['name' => 'student']);
         $roleStudent->givePermissionTo([
             'courses.read', 'grades.read', 'attendance.read'
         ]);
 
-        // Padre
-        $roleParent = Role::firstOrCreate(['name' => 'Padre']);
+        // parent (Padre/Apoderado)
+        $roleParent = Role::firstOrCreate(['name' => 'parent']);
         $roleParent->givePermissionTo([
             'grades.read', 'attendance.read', 'finance.read'
         ]);

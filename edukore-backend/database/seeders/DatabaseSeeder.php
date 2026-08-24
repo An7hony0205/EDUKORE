@@ -1,51 +1,33 @@
 <?php
-
 namespace Database\Seeders;
-
 use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Tenant;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
+use Spatie\Permission\Models\Role;
 
 class DatabaseSeeder extends Seeder
 {
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        $tenantId = (string) Str::uuid();
-        $roleId = (string) Str::uuid();
-        $userId = (string) Str::uuid();
-
-        DB::table('tenants')->insert([
-            'id' => $tenantId,
+        $tenant = Tenant::create([
+            'id' => \Illuminate\Support\Str::uuid(),
             'subdomain' => 'demo',
             'legal_name' => 'Colegio Demo',
             'is_active' => true,
-            'created_at' => now(),
-            'updated_at' => now(),
         ]);
-
-        DB::table('roles')->insert([
-            'id' => $roleId,
-            'tenant_id' => $tenantId,
-            'role_name' => 'Docente',
-            'created_at' => now(),
-            'updated_at' => now(),
+        
+        $adminRole = Role::firstOrCreate(['name' => 'Admin'], ['id' => \Illuminate\Support\Str::uuid()]);
+        $docenteRole = Role::firstOrCreate(['name' => 'Teacher'], ['id' => \Illuminate\Support\Str::uuid()]);
+        
+        $admin = User::create([
+            'id' => \Illuminate\Support\Str::uuid(),
+            'tenant_id' => $tenant->id,
+            'name' => 'Admin User',
+            'email' => 'admin@test.com',
+            'password' => Hash::make('password'),
+            'is_active' => true
         ]);
-
-        DB::table('users')->insert([
-            'id' => $userId,
-            'tenant_id' => $tenantId,
-            'role_id' => $roleId,
-            'name' => 'Profesor Prueba',
-            'email' => 'profesor@demo.edu',
-            'password' => Hash::make('password123'),
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        $admin->assignRole('Admin');
     }
 }

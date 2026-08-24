@@ -9,15 +9,62 @@ export const useAcademicStore = defineStore('academic', {
     error: null,
   }),
   actions: {
-    async fetchCourses() {
+    async fetchCourses(params = {}) {
       this.loading = true
       this.error = null
       try {
-        const response = await api.get('/courses')
+        const response = await api.get('/courses', { params })
         this.courses = response.data
       } catch (err) {
         this.error = err.response?.data?.message || 'Error fetching courses'
         console.error('Failed to fetch courses:', err)
+      } finally {
+        this.loading = false
+      }
+    },
+    async createCourse(payload) {
+      this.loading = true
+      this.error = null
+      try {
+        const response = await api.post('/courses', payload)
+        this.courses.push(response.data)
+        return response.data
+      } catch (err) {
+        this.error = err.response?.data?.message || 'Error creating course'
+        throw err
+      } finally {
+        this.loading = false
+      }
+    },
+    async updateCourse(id, payload) {
+      this.loading = true
+      this.error = null
+      try {
+        const response = await api.patch(`/courses/${id}`, payload)
+        const index = this.courses.findIndex(c => c.id === id)
+        if (index !== -1) {
+          this.courses[index] = response.data
+        }
+        return response.data
+      } catch (err) {
+        this.error = err.response?.data?.message || 'Error updating course'
+        throw err
+      } finally {
+        this.loading = false
+      }
+    },
+    async deleteCourse(id) {
+      this.loading = true
+      this.error = null
+      try {
+        await api.delete(`/courses/${id}`)
+        const index = this.courses.findIndex(c => c.id === id)
+        if (index !== -1) {
+          this.courses[index].is_active = false
+        }
+      } catch (err) {
+        this.error = err.response?.data?.message || 'Error deleting course'
+        throw err
       } finally {
         this.loading = false
       }

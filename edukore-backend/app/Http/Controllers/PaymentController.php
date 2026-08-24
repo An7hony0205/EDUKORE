@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Http\Requests\StorePaymentRequest;
 use App\Models\Fee;
 use App\Models\Payment;
 use App\Models\FinancialTransaction;
@@ -30,14 +31,9 @@ class PaymentController extends Controller
         return response()->json($payments);
     }
 
-    public function store(Request $request)
+    public function store(StorePaymentRequest $request)
     {
-        $request->validate([
-            'fee_id' => 'required|exists:fees,id',
-            'amount_paid' => 'required|numeric|min:0.01',
-            'payment_method' => 'required|string',
-            'reference' => 'nullable|string',
-        ]);
+        // La validación ya fue ejecutada y aprobada por StorePaymentRequest.
 
         $tenantId = auth()->user()->tenant_id;
         $fee = Fee::where('tenant_id', $tenantId)->findOrFail($request->fee_id);

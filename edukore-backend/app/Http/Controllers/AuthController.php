@@ -32,6 +32,10 @@ class AuthController extends Controller
             return response()->json(['message' => 'Credenciales incorrectas.'], 401);
         }
 
+        if (!$user->is_active) {
+            return response()->json(['message' => 'Credenciales incorrectas.'], 401);
+        }
+
         // Generate Sanctum token
         $token = $user->createToken('auth_token')->plainTextToken;
 

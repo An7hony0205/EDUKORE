@@ -14,7 +14,12 @@ class FamilyMember extends Model
         'user_id',
         'relation_type',
         'is_primary_contact',
-        'can_view_info'
+        'can_view_info',        // DEFAULT false (regla de negocio: el acceso al portal es opt-in)
+    ];
+
+    protected $casts = [
+        'is_primary_contact' => 'boolean',
+        'can_view_info'      => 'boolean',
     ];
 
     public function family()

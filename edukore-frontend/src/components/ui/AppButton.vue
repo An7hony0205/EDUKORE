@@ -44,10 +44,10 @@ const variantClasses = computed(() => {
     case 'danger':
       return 'bg-red-600 text-white hover:bg-red-500 focus:ring-red-500 shadow-[0_4px_20px_rgba(220,38,38,0.35)] hover:shadow-[0_6px_28px_rgba(220,38,38,0.55)]'
     case 'ghost':
-      return 'bg-transparent text-slate-300 hover:text-white hover:bg-white/5'
+      return 'bg-transparent text-slate-500 dark:text-slate-400 hover:text-white hover:bg-white/5'
     case 'primary':
     default:
-      return 'bg-primary-600 text-white hover:bg-primary-500 focus:ring-primary-500 shadow-[0_4px_20px_rgba(99,102,241,0.35)] hover:shadow-[0_6px_28px_rgba(99,102,241,0.55)]'
+      return 'bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200 text-white hover:bg-primary-500 focus:ring-slate-500 dark:focus:ring-slate-400 shadow-[0_4px_20px_rgba(99,102,241,0.35)] hover:shadow-[0_6px_28px_rgba(99,102,241,0.55)]'
   }
 })
 </script>

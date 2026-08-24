@@ -3,69 +3,115 @@
 namespace App\Http\Controllers;
 
 use App\Models\Course;
-use Illuminate\Http\JsonResponse;
+use App\Http\Requests\StoreCourseRequest;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class CourseController extends Controller
 {
     /**
-     * List all courses for the authenticated user's tenant.
+     * Display a listing of courses.
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
         $tenantId = auth()->user()->tenant_id;
+        $query = Course::where('tenant_id', $tenantId);
 
-        $courses = Course::where('tenant_id', $tenantId)
-            ->orderBy('name')
-            ->get();
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'ilike', '%' . $search . '%')
+                  ->orWhere('code', 'ilike', '%' . $search . '%');
+            });
+        }
 
-        return response()->json($courses);
+        if ($request->has('status') && $request->status !== 'all') {
+            $isActive = $request->status === 'active';
+            $query->where('is_active', $isActive);
+        }
+
+        // Sorting
+        $sort = $request->input('sort', 'name_asc');
+        switch ($sort) {
+            case 'name_desc':
+                $query->orderBy('name', 'desc');
+                break;
+            case 'recent':
+                $query->orderBy('created_at', 'desc');
+                break;
+            case 'oldest':
+                $query->orderBy('created_at', 'asc');
+                break;
+            case 'name_asc':
+            default:
+                $query->orderBy('name', 'asc');
+                break;
+        }
+
+        return response()->json($query->get());
     }
 
     /**
-     * Create a new course.
+     * Store a newly created course.
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreCourseRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'name'        => 'required|string|max:255',
-            'code'        => 'nullable|string|max:50',
-            'description' => 'nullable|string',
-        ]);
+        $tenantId = auth()->user()->tenant_id;
+
+        // La validación (incluyendo unicidad por tenant) fue ejecutada por StoreCourseRequest.
+        $validated = $request->validated();
 
         $course = Course::create([
-            'id'        => \Illuminate\Support\Str::uuid(),
-            'tenant_id' => auth()->user()->tenant_id,
-            ...$validated,
+            'id'          => Str::uuid(),
+            'tenant_id'   => $tenantId,
+            'name'        => $validated['name'],
+            'code'        => $validated['code'] ?? null,
+            'description' => $validated['description'] ?? null,
+            'is_active'   => $validated['is_active'] ?? true,
         ]);
 
         return response()->json($course, 201);
     }
 
     /**
-     * Show a single course (tenant-scoped).
+     * Display the specified course.
      */
-    public function show(string $id): JsonResponse
+    public function show($id): JsonResponse
     {
         $course = Course::where('tenant_id', auth()->user()->tenant_id)
-            ->with('courseAssignments.section', 'courseAssignments.teacher')
+            ->with(['courseAssignments' => function ($query) {
+                $query->with(['teacher', 'section.gradeLevel.level']);
+            }])
             ->findOrFail($id);
 
         return response()->json($course);
     }
 
     /**
-     * Update an existing course.
+     * Update the specified course.
      */
-    public function update(Request $request, string $id): JsonResponse
+    public function update(Request $request, $id): JsonResponse
     {
-        $course = Course::where('tenant_id', auth()->user()->tenant_id)
-            ->findOrFail($id);
+        $tenantId = auth()->user()->tenant_id;
+        $course = Course::where('tenant_id', $tenantId)->findOrFail($id);
 
         $validated = $request->validate([
-            'name'        => 'sometimes|string|max:255',
-            'code'        => 'sometimes|nullable|string|max:50',
-            'description' => 'sometimes|nullable|string',
+            'name' => [
+                'required', 'string', 'max:255',
+                Rule::unique('courses')->where(function ($query) use ($tenantId) {
+                    return $query->where('tenant_id', $tenantId);
+                })->ignore($course->id)
+            ],
+            'code' => [
+                'nullable', 'string', 'max:50',
+                Rule::unique('courses')->where(function ($query) use ($tenantId) {
+                    return $query->where('tenant_id', $tenantId);
+                })->ignore($course->id)
+            ],
+            'description' => 'nullable|string',
+            'is_active' => 'boolean'
         ]);
 
         $course->update($validated);
@@ -74,15 +120,15 @@ class CourseController extends Controller
     }
 
     /**
-     * Delete a course.
+     * Remove the specified course (soft deactivate logic per plan).
      */
-    public function destroy(string $id): JsonResponse
+    public function destroy($id): JsonResponse
     {
-        $course = Course::where('tenant_id', auth()->user()->tenant_id)
-            ->findOrFail($id);
-
-        $course->delete();
-
-        return response()->json(null, 204);
+        $course = Course::where('tenant_id', auth()->user()->tenant_id)->findOrFail($id);
+        
+        // We deactivate instead of physical delete
+        $course->update(['is_active' => false]);
+        
+        return response()->json(['message' => 'Curso desactivado correctamente']);
     }
 }

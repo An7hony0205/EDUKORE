@@ -15,7 +15,7 @@ class TenantSetting extends Model
     public $incrementing = false;
 
     protected $fillable = [
-        'id', 'tenant_id', 'logo_url', 'theme_color', 'timezone',
+        'id', 'tenant_id', 'logo_url', 'theme_color', 'theme_secondary', 'theme_surface', 'timezone',
         'grading_scale', 'tax_percentage', 'currency_default'
     ];
 

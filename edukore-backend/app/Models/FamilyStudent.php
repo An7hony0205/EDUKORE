@@ -12,7 +12,12 @@ class FamilyStudent extends Model
     protected $fillable = [
         'family_id',
         'student_id',
-        'relation_description'
+        'relation_description',
+        'is_primary',           // Familia principal del estudiante (solo una por student_id)
+    ];
+
+    protected $casts = [
+        'is_primary' => 'boolean',
     ];
 
     public function family()
