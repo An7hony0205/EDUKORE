@@ -15,12 +15,12 @@ class Grade extends Model
     protected $keyType = 'string';
 
     protected $fillable = [
-        'id', 'evaluation_criterion_id', 'student_id', 'score', 'letter_grade', 'feedback', 'created_by'
+        'id', 'activity_id', 'student_id', 'score', 'letter_grade', 'feedback', 'created_by'
     ];
 
-    public function criterion(): BelongsTo
+    public function activity(): BelongsTo
     {
-        return $this->belongsTo(EvaluationCriterion::class, 'evaluation_criterion_id');
+        return $this->belongsTo(EvaluationActivity::class, 'activity_id');
     }
 
     public function student(): BelongsTo

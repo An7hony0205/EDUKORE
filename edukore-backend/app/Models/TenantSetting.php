@@ -16,7 +16,7 @@ class TenantSetting extends Model
 
     protected $fillable = [
         'id', 'tenant_id', 'logo_url', 'theme_color', 'theme_secondary', 'theme_surface', 'timezone',
-        'grading_scale', 'tax_percentage', 'currency_default'
+        'grading_scale', 'grading_system', 'tax_percentage', 'currency_default'
     ];
 
     protected $casts = [

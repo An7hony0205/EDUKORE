@@ -18,7 +18,6 @@ class TenantSettingController extends Controller
             ['tenant_id' => $tenantId],
             [
                 'timezone' => 'UTC',
-                'grading_scale' => 'numeric_20',
                 'tax_percentage' => 0,
                 'currency_default' => 'USD'
             ]
@@ -37,7 +36,7 @@ class TenantSettingController extends Controller
 
         $validated = $request->validate([
             'timezone' => 'nullable|string',
-            'grading_scale' => 'nullable|string',
+            'grading_system' => 'nullable|in:competency,numeric',
             'tax_percentage' => 'nullable|numeric|min:0',
             'currency_default' => 'nullable|string|size:3',
             'logo' => 'nullable|image|mimes:jpg,png,jpeg,svg|max:2048'

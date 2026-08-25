@@ -30,6 +30,43 @@ const fetchStudents = async (page = 1) => {
   }
 }
 
+const downloadReport = async (studentId) => {
+  try {
+    // Petición JSON estándar (IDM no la intercepta)
+    const response = await api.get(`/reports/students/${studentId}/progress-report`);
+
+    if (!response.data.success || !response.data.pdf_base64) {
+      throw new Error(response.data.error || 'No se pudo generar el documento');
+    }
+
+    // Decodificar Base64 a binario
+    const byteCharacters = atob(response.data.pdf_base64);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: 'application/pdf' });
+    const url = window.URL.createObjectURL(blob);
+
+    // Abrir en nueva pestaña o descargar
+    const newWindow = window.open(url, '_blank');
+    if (!newWindow) {
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = response.data.filename || `Libreta_${studentId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    setTimeout(() => window.URL.revokeObjectURL(url), 10000);
+  } catch (error) {
+    console.error('Error detallado descargando reporte:', error);
+    alert('Error al generar la libreta oficial: ' + (error.response?.data?.error || error.message));
+  }
+};
+
 onMounted(() => {
   fetchStudents()
 })
@@ -108,7 +145,18 @@ onMounted(() => {
                 </td>
                 <td class="px-6 py-4 text-slate-500 dark:text-slate-400">{{ formatDate(student.created_at) }}</td>
                 <td class="px-6 py-4 text-right">
-                  <router-link :to="`/student/${student.id}`" class="text-primary-400 hover:text-primary-300 text-xs font-medium">Ver Ficha</router-link>
+                  <div class="flex items-center justify-end gap-3">
+                    <button 
+                      type="button" 
+                      @click.stop.prevent="downloadReport(student.id)" 
+                      class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium rounded-lg transition-colors shadow-sm cursor-pointer"
+                      title="Generar Libreta Oficial"
+                    >
+                      <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                      <span>Libreta</span>
+                    </button>
+                    <router-link :to="`/student/${student.id}`" class="text-primary-400 hover:text-primary-300 text-xs font-medium">Ver Ficha</router-link>
+                  </div>
                 </td>
               </tr>
             </tbody>

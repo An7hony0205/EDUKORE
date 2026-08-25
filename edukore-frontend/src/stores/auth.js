@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import api from '../api/axios'
 
 export const useAuthStore = defineStore('auth', () => {
@@ -60,5 +60,57 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  return { user, token, isLoading, login, logout, fetchUser }
+  // ── Getters (Role Helpers) ──────────────────────────────────────────────────
+  const isTeacher = computed(() => {
+    const u = user.value
+    if (!u) return false
+    if (typeof u.role === 'string' && u.role.toLowerCase() === 'teacher') return true
+    if (u.role?.name && u.role.name.toLowerCase() === 'teacher') return true
+    if (Array.isArray(u.roles) && u.roles.some(r => (typeof r === 'string' ? r : r.name)?.toLowerCase() === 'teacher')) return true
+    if (u.teacher_id || u.teacher) return true
+    return false
+  })
+
+  const isAdmin = computed(() => {
+    const u = user.value
+    if (!u) return false
+    if (typeof u.role === 'string' && (u.role.toLowerCase() === 'admin' || u.role.toLowerCase() === 'super_admin')) return true
+    if (u.role?.name && (u.role.name.toLowerCase() === 'admin' || u.role.name.toLowerCase() === 'super_admin')) return true
+    if (Array.isArray(u.roles) && u.roles.some(r => {
+      const name = (typeof r === 'string' ? r : r.name)?.toLowerCase()
+      return name === 'admin' || name === 'super_admin'
+    })) return true
+    return false
+  })
+
+  const isStudent = computed(() => {
+    const u = user.value
+    if (!u) return false
+    if (typeof u.role === 'string' && u.role.toLowerCase() === 'student') return true
+    if (u.role?.name && u.role.name.toLowerCase() === 'student') return true
+    if (Array.isArray(u.roles) && u.roles.some(r => (typeof r === 'string' ? r : r.name)?.toLowerCase() === 'student')) return true
+    return false
+  })
+
+  const isParent = computed(() => {
+    const u = user.value
+    if (!u) return false
+    if (typeof u.role === 'string' && u.role.toLowerCase() === 'parent') return true
+    if (u.role?.name && u.role.name.toLowerCase() === 'parent') return true
+    if (Array.isArray(u.roles) && u.roles.some(r => (typeof r === 'string' ? r : r.name)?.toLowerCase() === 'parent')) return true
+    return false
+  })
+
+  return {
+    user,
+    token,
+    isLoading,
+    login,
+    logout,
+    fetchUser,
+    isTeacher,
+    isAdmin,
+    isStudent,
+    isParent
+  }
 })

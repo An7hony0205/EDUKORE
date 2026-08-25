@@ -1,0 +1,1 @@
+$user = \App\Models\User::where('email', 'like', '%profesor%')->orWhere('email', 'like', '%teacher%')->first(); if ($user) { $role = \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'teacher', 'guard_name' => 'sanctum']); $user->assignRole($role); echo "Role assigned"; } else { echo "User not found"; }

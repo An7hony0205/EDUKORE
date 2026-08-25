@@ -29,7 +29,7 @@ onMounted(async () => {
         tenantLogo.value = `http://localhost:8000/storage/${res.data.logo_url}`
       }
     } catch (e) {
-      console.error('Error fetching layout settings', e)
+      console.warn('No se pudieron cargar los settings globales:', e)
     }
   }
 })
@@ -103,14 +103,30 @@ const initials = () => {
 
       <!-- Navigation -->
       <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-        <!-- Dashboard -->
-        <router-link to="/dashboard" custom v-slot="{ isActive, navigate }">
+        <!-- Dashboard Principal (Admin) -->
+        <router-link v-if="auth.isAdmin" to="/dashboard" custom v-slot="{ isActive, navigate }">
           <NavItem icon="grid" label="Panel Principal" :active="isActive" @click="navigate(); isMobileClose()" />
         </router-link>
 
-        <!-- ACADÉMICO -->
-        <template v-if="auth.user?.role?.name === 'admin' || auth.user?.role?.name === 'teacher'">
-          <div v-if="auth.user?.role?.name === 'admin'" class="mt-8 mb-2 px-3">
+        <!-- TEACHER PORTAL -->
+        <template v-if="auth.isTeacher">
+          <div class="mt-4 mb-2 px-3">
+            <h3 class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Mi Portal</h3>
+          </div>
+          <router-link to="/dashboard" custom v-slot="{ isActive, navigate }">
+            <NavItem icon="grid" label="Mi Panel" :active="isActive" @click="navigate(); isMobileClose()" />
+          </router-link>
+          <router-link to="/daily-attendance" custom v-slot="{ isActive, navigate }">
+            <NavItem icon="check-square" label="Asistencia" :active="isActive" @click="navigate(); isMobileClose()" />
+          </router-link>
+          <router-link to="/grades" custom v-slot="{ isActive, navigate }">
+            <NavItem icon="award" label="Calificaciones" :active="isActive" @click="navigate(); isMobileClose()" />
+          </router-link>
+        </template>
+
+        <!-- ACADÉMICO (Solo Admin) -->
+        <template v-if="auth.isAdmin">
+          <div class="mt-8 mb-2 px-3">
             <h3 class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Académico</h3>
           </div>
           <router-link to="/students" custom v-slot="{ isActive, navigate }">
@@ -119,23 +135,22 @@ const initials = () => {
           <router-link to="/parents/new" custom v-slot="{ isActive, navigate }">
             <NavItem icon="user-plus" label="Familias" :active="isActive" @click="navigate(); isMobileClose()" />
           </router-link>
-          <router-link v-if="auth.user?.role?.name === 'admin'" to="/teachers" custom v-slot="{ isActive, navigate }">
+          <router-link to="/teachers" custom v-slot="{ isActive, navigate }">
             <NavItem icon="users" label="Docentes" :active="isActive" @click="navigate(); isMobileClose()" />
           </router-link>
-          <router-link v-if="auth.user?.role?.name === 'admin'" to="/courses" custom v-slot="{ isActive, navigate }">
+          <router-link to="/courses" custom v-slot="{ isActive, navigate }">
             <NavItem icon="list" label="Catálogo de Cursos" :active="isActive" @click="navigate(); isMobileClose()" />
           </router-link>
           <router-link to="/course-assignments" custom v-slot="{ isActive, navigate }">
             <NavItem icon="book-open" label="Asignaciones" :active="isActive" @click="navigate(); isMobileClose()" />
           </router-link>
-          <!-- Links for attendance, grades... handled via courses mostly for teachers, but reports here -->
           <router-link to="/reports" custom v-slot="{ isActive, navigate }">
             <NavItem icon="bar-chart-2" label="Reportes" :active="isActive" @click="navigate(); isMobileClose()" />
           </router-link>
         </template>
 
         <!-- FINANZAS -->
-        <template v-if="auth.user?.role?.name === 'admin' && auth.user?.tenant?.active_modules?.finances">
+        <template v-if="auth.isAdmin && auth.user?.tenant?.active_modules?.finances">
           <div class="pt-4 pb-2">
             <p class="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Finanzas & Comunidad</p>
           </div>
@@ -151,15 +166,15 @@ const initials = () => {
         </template>
 
         <!-- ADMINISTRACIÓN -->
-        <template v-if="auth.user?.role?.name === 'admin'">
+        <template v-if="auth.isAdmin">
           <div class="pt-4 pb-2">
             <p class="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Administración</p>
           </div>
           <router-link to="/daily-attendance" custom v-slot="{ isActive, navigate }">
-            <NavItem icon="check-square" label="Asistencia" :active="isActive" @click="navigate(); isMobileClose()" />
+            <NavItem icon="check-square" label="Asistencia General" :active="isActive" @click="navigate(); isMobileClose()" />
           </router-link>
           <router-link to="/grades" custom v-slot="{ isActive, navigate }">
-            <NavItem icon="award" label="Calificaciones" :active="isActive" @click="navigate(); isMobileClose()" />
+            <NavItem icon="award" label="Calificaciones Global" :active="isActive" @click="navigate(); isMobileClose()" />
           </router-link>
           <router-link to="/schedules" custom v-slot="{ isActive, navigate }">
             <NavItem icon="calendar" label="Horarios" :active="isActive" @click="navigate(); isMobileClose()" />
@@ -227,7 +242,7 @@ const initials = () => {
             </div>
             <div class="hidden sm:block">
               <p class="text-sm font-medium leading-tight dark:text-slate-200 text-slate-900">{{ auth.user?.name ?? '—' }}</p>
-              <p class="text-xs leading-tight truncate max-w-[120px] dark:text-slate-400 text-slate-500">{{ auth.user?.role?.name ?? 'Usuario' }}</p>
+              <p class="text-xs leading-tight truncate max-w-[120px] dark:text-slate-400 text-slate-500">{{ auth.user?.roles?.[0]?.name || auth.user?.role?.name || 'Usuario' }}</p>
             </div>
           </div>
         </div>
@@ -253,11 +268,13 @@ const iconPaths = {
   users: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
   'book-open': '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>',
   'bar-chart-2': '<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
-  settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+  settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
   'credit-card': '<rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>',
   shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
   calendar: '<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
   clipboard: '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>',
+  'check-square': '<polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
+  award: '<circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/>',
 }
 
 function FeatherIcon(name, size = 16) {

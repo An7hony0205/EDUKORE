@@ -51,7 +51,7 @@ const saveSettings = async () => {
     formData.append('_method', 'PUT')
     
     formData.append('timezone', settings.value.timezone || '')
-    formData.append('grading_scale', settings.value.grading_scale || '')
+    formData.append('grading_system', settings.value.grading_system || 'competency')
     
     if (settings.value.tax_percentage !== null && settings.value.tax_percentage !== undefined) {
       formData.append('tax_percentage', settings.value.tax_percentage)
@@ -125,14 +125,14 @@ const saveSettings = async () => {
               </select>
             </div>
             <div>
-              <label class="block text-sm font-medium dark:text-slate-300 text-slate-700 mb-2">Sistema de Calificación</label>
-              <select v-model="settings.grading_scale" class="w-full dark:bg-white/5 dark:border-brand-border dark:text-white bg-slate-50 border-slate-200 text-slate-900 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-slate-900 dark:focus:ring-white outline-none">
-                <option value="numeric_20" class="dark:bg-slate-800 bg-white">Numérico (0 - 20)</option>
-                <option value="numeric_10" class="dark:bg-slate-800 bg-white">Numérico (0 - 10)</option>
-                <option value="letters" class="dark:bg-slate-800 bg-white">Letras (A, B, C...)</option>
+              <label class="block text-sm font-medium dark:text-slate-300 text-slate-700 mb-2">Modelo de Calificaciones Institucional</label>
+              <select v-model="settings.grading_system" class="w-full dark:bg-white/5 dark:border-brand-border dark:text-white bg-slate-50 border-slate-200 text-slate-900 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-slate-900 dark:focus:ring-white outline-none">
+                <option value="competency" class="dark:bg-slate-800 bg-white">Por Competencias CNEB / Literal (AD, A, B, C)</option>
+                <option value="numeric" class="dark:bg-slate-800 bg-white">Vigesimal Numérico (0-20)</option>
               </select>
             </div>
           </div>
+          <p class="mt-4 text-xs text-slate-500">Este cambio afectará cómo los docentes registran las calificaciones en sus cursos.</p>
         </div>
 
         <!-- Panel Financiero -->

@@ -294,7 +294,15 @@ router.beforeEach((to) => {
     // Como userRole nunca es null, solo necesitamos verificar includes().
     // Un usuario con rol 'guest' nunca pasará ninguna ruta protegida.
     if (to.meta.roles && to.meta.roles.length > 0) {
-      if (!to.meta.roles.includes(userRole)) {
+      const hasAccess = to.meta.roles.some(role => {
+        if (role === 'admin' || role === 'super_admin') return auth.isAdmin;
+        if (role === 'teacher') return auth.isTeacher;
+        if (role === 'student') return auth.isStudent;
+        if (role === 'parent') return auth.isParent;
+        return false;
+      });
+      
+      if (!hasAccess) {
         return { name: 'dashboard' }
       }
     }

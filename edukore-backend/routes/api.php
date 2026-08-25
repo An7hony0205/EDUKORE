@@ -17,6 +17,7 @@ use App\Http\Controllers\AcademicYearController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\SectionController;
 use App\Http\Controllers\EnrollmentController;
+use App\Http\Controllers\ReportCardController;
 use App\Http\Controllers\SectionAttendanceController;
 use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\TimeSlotController;
@@ -48,9 +49,10 @@ Route::prefix('v1')->group(function () {
     // ─── Protected Routes (auth + tenant scoping) ─────────────────────────────
     Route::middleware(['auth:sanctum', TenantScopeMiddleware::class])->group(function () {
 
-        // Auth (available to any authenticated user)
+        // ── Auth General (Autenticado) ─────────────────────────────────────────
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::get('/me', [AuthController::class, 'me']);
+        Route::get('/settings', [\App\Http\Controllers\TenantSettingController::class, 'show']); // Lectura global
 
         // ── Portales de Solo Lectura (acceso restringido por rol) ──────────────
 
@@ -68,19 +70,34 @@ Route::prefix('v1')->group(function () {
             Route::get('parent-dashboard', [ParentDashboardController::class, 'index']);
         });
 
-        // ── Dashboard del Docente — teacher o admin ────────────────────────────
-        Route::middleware('role:admin|teacher')->group(function () {
-            Route::get('teacher/dashboard', [TeacherDashboardController::class, 'index']);
-            Route::get('course-assignments/{id}/gradebook', [TeacherDashboardController::class, 'gradebook']);
+        // ── Lectura global (Estructura, Asistencia, Calificaciones) para cualquier usuario autenticado ──
+        Route::get('academic-structure', [AcademicStructureController::class, 'index']);
+        Route::get('academic-structure/summary', [AcademicStructureController::class, 'summary']);
+        Route::get('academic-structure/sections/{sectionId}/students', [AcademicStructureController::class, 'sectionStudents']);
+        
+        Route::apiResource('course-assignments', CourseAssignmentController::class)->only(['index', 'show']);
+
+        Route::get('academic-terms', [AcademicTermController::class, 'index']);
+        
+        Route::get('grades/structure', [GradeController::class, 'structure']);
+        Route::get('grades/activity/{activityId}', [GradeController::class, 'getActivityGrades']);
+        Route::post('grades/activity/{activityId}', [GradeController::class, 'saveActivityGrades']);
+        Route::post('grades/rubrics/{rubricId}/activities', [GradeController::class, 'storeActivity']);
+        
+        Route::get('section-attendance', [SectionAttendanceController::class, 'index']);
+        Route::post('section-attendance/bulk', [SectionAttendanceController::class, 'bulk']);
+
+        // ── Portal del Docente — teacher o admin ───────────────────────────────
+        Route::prefix('teacher')->group(function () {
+            Route::get('/dashboard-summary', [\App\Http\Controllers\TeacherPortalController::class, 'summary']);
+            Route::get('/my-courses', [\App\Http\Controllers\TeacherPortalController::class, 'myCourses']);
+            Route::get('/my-schedule', [\App\Http\Controllers\TeacherPortalController::class, 'mySchedule']);
         });
 
         // ── Gestión Académica (Asistencia y Calificaciones) — admin o teacher ──
         Route::middleware('role:admin|teacher')->group(function () {
             Route::get('attendance', [AttendanceController::class, 'index']);
             Route::post('attendance/bulk', [AttendanceController::class, 'storeBulk']);
-            // Asistencia diaria por sección (nuevo módulo)
-            Route::get('section-attendance', [SectionAttendanceController::class, 'index']);
-            Route::post('section-attendance/bulk', [SectionAttendanceController::class, 'bulk']);
             // Horarios semanales por sección
             Route::get('schedules', [ScheduleController::class, 'index']);
             Route::post('schedules', [ScheduleController::class, 'store']);
@@ -91,15 +108,13 @@ Route::prefix('v1')->group(function () {
             Route::apiResource('time-slots', TimeSlotController::class);
 
             // Calificaciones
-            Route::get('academic-terms', [AcademicTermController::class, 'index']);
-            Route::get('grades/sheet', [GradeController::class, 'sheet']);
-            Route::post('grades/bulk-sync', [GradeController::class, 'bulkSync']);
 
             Route::apiResource('evaluations', EvaluationController::class);
             Route::post('evaluations/{evaluation}/publish', [EvaluationController::class, 'publish']);
 
             Route::get('grades', [GradeController::class, 'index']);
             Route::post('grades/bulk', [GradeController::class, 'storeBulk']);
+            Route::post('grades/competency-sync', [GradeController::class, 'competencySync']);
         });
 
         // ── Administración General — solo admin ────────────────────────────────
@@ -115,9 +130,6 @@ Route::prefix('v1')->group(function () {
             Route::apiResource('academic-years', AcademicYearController::class);
             Route::apiResource('grade-levels', GradeLevelController::class);
             Route::apiResource('sections', SectionController::class);
-            Route::get('academic-structure', [AcademicStructureController::class, 'index']);
-            Route::get('academic-structure/summary', [AcademicStructureController::class, 'summary']);
-            Route::get('academic-structure/sections/{sectionId}/students', [AcademicStructureController::class, 'sectionStudents']);
             Route::put('academic-structure/sections/{sectionId}/tutor', [AcademicStructureController::class, 'updateTutor']);
             Route::get('sections/{section}/details', [SectionController::class, 'details']);
             Route::apiResource('academic-periods', AcademicPeriodController::class);
@@ -133,14 +145,14 @@ Route::prefix('v1')->group(function () {
             Route::apiResource('teachers', \App\Http\Controllers\TeacherController::class);
             Route::patch('teachers/{teacher}/status', [\App\Http\Controllers\TeacherController::class, 'toggleStatus']);
             Route::get('users', [\App\Http\Controllers\UserController::class, 'index']);
-            Route::apiResource('course-assignments', CourseAssignmentController::class);
+            Route::apiResource('course-assignments', CourseAssignmentController::class)->except(['index', 'show']);
 
-            // Settings (Configuración Institucional)
-            Route::get('settings', [TenantSettingController::class, 'show']);
+            // Settings (Actualización Institucional - Solo Admin)
             Route::put('settings', [TenantSettingController::class, 'update']); // PUT soportado vía POST + _method
 
             // Reports
             Route::get('reports/student-report-card/{studentId}', [ReportController::class, 'studentReportCard']);
+            Route::get('reports/students/{studentId}/progress-report', [ReportCardController::class, 'progressReport']);
             Route::get('reports/section/{sectionId}/report-cards', [ReportController::class, 'generateSectionPdfs']);
             Route::get('reports/student-report-card/{studentId}/export', [ReportController::class, 'exportReportCardPdf']);
             Route::get('reports/enrollments/csv', [ReportController::class, 'exportEnrollmentsCsv']);

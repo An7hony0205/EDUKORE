@@ -27,4 +27,9 @@ class EvaluationCriterion extends Model
     {
         return $this->belongsTo(AcademicTerm::class);
     }
+
+    public function activities()
+    {
+        return $this->hasMany(EvaluationActivity::class, 'evaluation_criterion_id')->orderBy('order_index');
+    }
 }
