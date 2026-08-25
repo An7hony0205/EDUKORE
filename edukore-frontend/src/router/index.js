@@ -24,6 +24,8 @@ const FinancesView          = () => import('../views/Admin/FinancesView.vue')
 const CommunityEventsView   = () => import('../views/Admin/CommunityEventsView.vue')
 const AnnouncementsView     = () => import('../views/Admin/AnnouncementsView.vue')
 
+import GradesView from '../views/Admin/GradesView.vue'
+
 // ─── Route Definitions ────────────────────────────────────────────────────────
 // meta.roles: array de roles autorizados (string en inglés/snake_case).
 //             Si está vacío/ausente, cualquier usuario autenticado puede acceder.
@@ -175,7 +177,25 @@ const routes = [
     meta: { requiresAuth: true, roles: ['admin', 'super_admin'] },
   },
 
-  // ── Asistencia y Calificaciones (admin + teacher) ─────────────────────────
+  // ── Asistencia, Horarios y Calificaciones (admin + teacher) ─────────────────────────
+  {
+    path: '/grades',
+    name: 'grades',
+    component: GradesView,
+    meta: { requiresAuth: true, roles: ['admin', 'super_admin', 'teacher'] },
+  },
+  {
+    path: '/schedules',
+    name: 'schedules',
+    component: () => import('../views/Admin/SchedulesView.vue'),
+    meta: { requiresAuth: true, roles: ['admin', 'super_admin', 'teacher'] },
+  },
+  {
+    path: '/daily-attendance',
+    name: 'daily-attendance',
+    component: () => import('../views/Admin/AttendanceDailyView.vue'),
+    meta: { requiresAuth: true, roles: ['admin', 'super_admin', 'teacher'] },
+  },
   {
     path: '/course/:id/attendance',
     name: 'attendance',
@@ -184,7 +204,7 @@ const routes = [
   },
   {
     path: '/evaluation/:id/grades',
-    name: 'grades',
+    name: 'grades-entry',
     component: () => import('../views/GradesEntryView.vue'),
     meta: { requiresAuth: true, roles: ['admin', 'super_admin', 'teacher'] },
   },
@@ -215,6 +235,12 @@ const routes = [
     name: 'family-detail',
     component: () => import('../views/Admin/Families/FamilyDetailView.vue'),
     meta: { requiresAuth: true, roles: ['admin', 'super_admin'] },
+  },
+  {
+    path: '/parents/new',
+    name: 'parent-new',
+    component: () => import('../views/Admin/ParentRegistrationView.vue'),
+    meta: { requiresAuth: true },
   },
 
   // ── Raíz ──────────────────────────────────────────────────────────────────

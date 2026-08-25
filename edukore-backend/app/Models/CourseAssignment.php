@@ -50,7 +50,7 @@ class CourseAssignment extends Model
 
     public function section(): BelongsTo
     {
-        return $this->belongsTo(Section::class);
+        return $this->belongsTo(AcademicSection::class, 'section_id');
     }
 
     public function teacher(): BelongsTo

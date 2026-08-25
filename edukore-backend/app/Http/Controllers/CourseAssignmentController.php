@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\CourseAssignment;
-use App\Models\Section;
+use App\Models\AcademicSection;
 use App\Models\User;
 use App\Models\Course;
 use Illuminate\Http\Request;
@@ -15,7 +15,7 @@ class CourseAssignmentController extends Controller
     {
         $tenantId = auth()->user()->tenant_id;
 
-        $assignments = CourseAssignment::with(['course', 'section.gradeLevel.level.academicYear', 'teacher'])
+        $assignments = CourseAssignment::with(['course', 'section.grade.academicLevel', 'teacher'])
             ->whereHas('course', function ($query) use ($tenantId) {
                 $query->where('tenant_id', $tenantId);
             })
@@ -28,7 +28,7 @@ class CourseAssignmentController extends Controller
     {
         $validated = $request->validate([
             'course_id' => 'required|uuid|exists:courses,id',
-            'section_id' => 'required|uuid|exists:sections,id',
+            'section_id' => 'required|uuid|exists:academic_sections,id',
             'teacher_id' => 'required|uuid|exists:users,id',
             'schedule' => 'nullable|string',
             'room' => 'nullable|string',
@@ -41,10 +41,8 @@ class CourseAssignmentController extends Controller
         // Verify Course belongs to tenant
         Course::where('tenant_id', $tenantId)->findOrFail($validated['course_id']);
 
-        // Verify Section belongs to tenant
-        Section::whereHas('gradeLevel.level.academicYear', function ($query) use ($tenantId) {
-            $query->where('tenant_id', $tenantId);
-        })->findOrFail($validated['section_id']);
+        // Verify Section exists (global structure)
+        AcademicSection::findOrFail($validated['section_id']);
 
         // Verify Teacher belongs to tenant
         User::where('tenant_id', $tenantId)->findOrFail($validated['teacher_id']);
@@ -55,7 +53,7 @@ class CourseAssignmentController extends Controller
             ->exists();
 
         if ($exists) {
-            return response()->json(['message' => 'Ya existe una asignación para este curso en esta sección.'], 422);
+            return response()->json(['message' => 'Ya existe una asignaciÃ³n para este curso en esta secciÃ³n.'], 422);
         }
 
         $assignment = CourseAssignment::create([
@@ -65,14 +63,14 @@ class CourseAssignmentController extends Controller
             'weekly_hours' => $validated['weekly_hours'] ?? 0,
         ]);
 
-        return response()->json(['data' => $assignment->load(['course', 'section', 'teacher'])], 201);
+        return response()->json(['data' => $assignment->load(['course', 'section.grade.academicLevel', 'teacher'])], 201);
     }
 
     public function show(string $id): JsonResponse
     {
         $tenantId = auth()->user()->tenant_id;
 
-        $assignment = CourseAssignment::with(['course', 'section.gradeLevel.level.academicYear', 'teacher'])
+        $assignment = CourseAssignment::with(['course', 'section.grade.academicLevel', 'teacher'])
             ->whereHas('course', function ($query) use ($tenantId) {
                 $query->where('tenant_id', $tenantId);
             })
@@ -103,7 +101,7 @@ class CourseAssignmentController extends Controller
 
         $assignment->update($validated);
 
-        return response()->json(['data' => $assignment->load(['course', 'section', 'teacher'])]);
+        return response()->json(['data' => $assignment->load(['course', 'section.grade.academicLevel', 'teacher'])]);
     }
 
     public function destroy(string $id): JsonResponse

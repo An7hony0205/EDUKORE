@@ -2,111 +2,184 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CourseAssignment;
+use App\Models\EvaluationCriterion;
 use App\Models\Grade;
-use App\Models\Evaluation;
-use App\Models\Enrollment;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class GradeController extends Controller
 {
-    public function index(Request $request)
+    /**
+     * GET /api/grades/sheet
+     * Retorna los criterios y estudiantes con sus notas para una asignación y periodo.
+     */
+    public function sheet(Request $request): JsonResponse
     {
         $request->validate([
-            'evaluation_id' => 'required|uuid',
+            'course_assignment_id' => 'required|uuid|exists:course_assignments,id',
+            'term_id'              => 'required|uuid|exists:academic_terms,id',
         ]);
 
-        $grades = Grade::with('enrollment.student')
-            ->where('evaluation_id', $request->evaluation_id)
+        $assignmentId = $request->course_assignment_id;
+        $termId       = $request->term_id;
+
+        // Criterios de evaluación para este curso y periodo
+        $criteria = EvaluationCriterion::where('course_assignment_id', $assignmentId)
+            ->where('term_id', $termId)
+            ->orderBy('order_index')
             ->get();
 
-        return response()->json($grades);
-    }
+        // Si no hay criterios, creamos 3 por defecto
+        if ($criteria->isEmpty()) {
+            $defaultCriteria = [
+                ['name' => 'Evaluación Continua', 'weight' => 0.4, 'order_index' => 1],
+                ['name' => 'Tareas / Actividades', 'weight' => 0.3, 'order_index' => 2],
+                ['name' => 'Examen de Periodo', 'weight' => 0.3, 'order_index' => 3],
+            ];
 
-    public function storeBulk(Request $request)
-    {
-        $request->validate([
-            'evaluation_id' => 'required|uuid|exists:evaluations,id',
-            'grades' => 'required|array',
-            'grades.*.enrollment_id' => 'required|uuid',
-            'grades.*.score' => 'required|numeric',
-            'grades.*.rubric_results' => 'nullable|array',
-            'grades.*.feedback' => 'nullable|string',
-        ]);
-
-        $evaluation = Evaluation::with('academicPeriod')->findOrFail($request->evaluation_id);
-
-        // ── PARCHE IDOR: Validación de propiedad para docentes ─────────────────
-        // El middleware de ruta confirma que el usuario es teacher o admin,
-        // pero no que esta evaluación le pertenece. Un docente no puede
-        // modificar calificaciones de clases asignadas a otro docente.
-        if (auth()->user()->hasRole('teacher')) {
-            $ownsCourse = \App\Models\CourseAssignment::where('id', $evaluation->course_assignment_id)
-                ->where('teacher_id', auth()->id())
-                ->exists();
-            abort_if(!$ownsCourse, 403, 'No tienes permiso para modificar las calificaciones de esta clase.');
-        }
-
-        if ($evaluation->academicPeriod && $evaluation->academicPeriod->is_locked) {
-            return response()->json(['message' => 'No se pueden modificar notas en un periodo académico bloqueado.'], 403);
-        }
-
-        if ($evaluation->status === 'CLOSED') {
-            return response()->json(['message' => 'No se pueden modificar notas de una evaluación CERRADA.'], 403);
-        }
-
-        $courseAssignment = \App\Models\CourseAssignment::findOrFail($evaluation->course_assignment_id);
-        $enrollmentIds = collect($request->grades)->pluck('enrollment_id');
-        $validEnrollments = Enrollment::whereIn('id', $enrollmentIds)
-            ->where('section_id', $courseAssignment->section_id)
-            ->pluck('id');
-
-        if ($validEnrollments->count() !== $enrollmentIds->count()) {
-            return response()->json(['message' => 'Invalid enrollments for this evaluation.'], 422);
-        }
-
-        $records = [];
-        foreach ($request->grades as $gradeData) {
-            $existing = Grade::where('evaluation_id', $request->evaluation_id)
-                ->where('enrollment_id', $gradeData['enrollment_id'])
-                ->first();
-
-            $oldScore = $existing ? $existing->score : null;
-
-            if ($evaluation->status === 'PUBLISHED' && $oldScore !== null && $oldScore != $gradeData['score']) {
-                if (empty($gradeData['reason'])) {
-                    return response()->json(['message' => 'Se requiere un motivo para modificar una calificación publicada.'], 422);
-                }
-            }
-
-            $grade = Grade::updateOrCreate(
-                [
-                    'evaluation_id' => $request->evaluation_id,
-                    'enrollment_id' => $gradeData['enrollment_id'],
-                ],
-                [
-                    'score' => $gradeData['score'],
-                    'rubric_results' => isset($gradeData['rubric_results']) ? $gradeData['rubric_results'] : null,
-                    'feedback' => $gradeData['feedback'] ?? null,
-                ]
-            );
-
-            // Audit
-            if ($oldScore !== null && $oldScore != $gradeData['score']) {
-                \App\Models\GradeAudit::create([
-                    'grade_id' => $grade->id,
-                    'user_id' => $request->user()->id,
-                    'old_score' => $oldScore,
-                    'new_score' => $gradeData['score'],
-                    'reason' => $gradeData['reason'] ?? 'Actualización en borrador'
+            foreach ($defaultCriteria as $c) {
+                EvaluationCriterion::create([
+                    'id'                   => (string) Str::uuid(),
+                    'course_assignment_id' => $assignmentId,
+                    'term_id'              => $termId,
+                    'name'                 => $c['name'],
+                    'weight'               => $c['weight'],
+                    'order_index'          => $c['order_index'],
                 ]);
             }
 
-            $records[] = $grade;
+            $criteria = EvaluationCriterion::where('course_assignment_id', $assignmentId)
+                ->where('term_id', $termId)
+                ->orderBy('order_index')
+                ->get();
         }
 
+        // Obtener estudiantes matriculados en la sección del curso
+        $assignment = CourseAssignment::with('section.students')->findOrFail($assignmentId);
+        $students = $assignment->section->students;
+
+        // Obtener notas existentes para estos criterios y estudiantes
+        $grades = Grade::whereIn('evaluation_criterion_id', $criteria->pluck('id'))
+            ->whereIn('student_id', $students->pluck('id'))
+            ->get();
+
+        // Armar el payload
+        $studentsData = $students->map(function ($student) use ($criteria, $grades) {
+            $studentGrades = $criteria->map(function ($criterion) use ($student, $grades) {
+                $grade = $grades->where('student_id', $student->id)
+                    ->where('evaluation_criterion_id', $criterion->id)
+                    ->first();
+
+                return [
+                    'criterion_id' => $criterion->id,
+                    'score'        => $grade ? $grade->score : null,
+                ];
+            });
+
+            // Cálculo promedio servidor
+            $totalWeight = 0;
+            $sum = 0;
+            foreach ($studentGrades as $sg) {
+                if ($sg['score'] !== null) {
+                    $weight = $criteria->firstWhere('id', $sg['criterion_id'])->weight;
+                    $sum += $sg['score'] * $weight;
+                    $totalWeight += $weight;
+                }
+            }
+            $average = $totalWeight > 0 ? round($sum / $totalWeight, 2) : null;
+
+            return [
+                'id'                => $student->id,
+                'name'              => $student->name,
+                'enrollment_number' => $student->enrollment_number,
+                'grades'            => $studentGrades,
+                'average'           => $average,
+            ];
+        });
+
         return response()->json([
-            'message' => 'Grades saved successfully.',
-            'data' => $records
+            'criteria' => $criteria,
+            'students' => $studentsData,
         ]);
+    }
+
+    /**
+     * POST /api/grades/bulk-sync
+     */
+    public function bulkSync(Request $request): JsonResponse
+    {
+        $request->validate([
+            'course_assignment_id' => 'required|uuid|exists:course_assignments,id',
+            'term_id'              => 'required|uuid|exists:academic_terms,id',
+            'criteria'             => 'required|array',
+            'grades'               => 'required|array',
+        ]);
+
+        $assignmentId = $request->course_assignment_id;
+        $termId       = $request->term_id;
+        $criteria     = $request->criteria;
+        $grades       = $request->grades;
+
+        DB::transaction(function () use ($assignmentId, $termId, $criteria, $grades) {
+            // Sincronizar Criterios
+            $existingCriteriaIds = collect($criteria)->pluck('id')->filter()->toArray();
+            
+            // Eliminar criterios que ya no están en la lista (y en cascada se van sus notas)
+            EvaluationCriterion::where('course_assignment_id', $assignmentId)
+                ->where('term_id', $termId)
+                ->whereNotIn('id', $existingCriteriaIds)
+                ->delete();
+
+            $criteriaMap = []; // map temporal_id -> real UUID
+            
+            foreach ($criteria as $index => $c) {
+                $uuid = $c['id'] ?? (string) Str::uuid();
+                if (isset($c['id']) && Str::isUuid($c['id'])) {
+                    EvaluationCriterion::where('id', $uuid)->update([
+                        'name'        => $c['name'],
+                        'weight'      => $c['weight'],
+                        'order_index' => $index + 1,
+                    ]);
+                } else {
+                    EvaluationCriterion::create([
+                        'id'                   => $uuid,
+                        'course_assignment_id' => $assignmentId,
+                        'term_id'              => $termId,
+                        'name'                 => $c['name'],
+                        'weight'               => $c['weight'],
+                        'order_index'          => $index + 1,
+                    ]);
+                    $criteriaMap[$c['id']] = $uuid; // Por si el front envió un ID temporal (ej. 'new-1')
+                }
+            }
+
+            // Sincronizar Notas
+            foreach ($grades as $g) {
+                // Si el criterio era nuevo, usamos el UUID real
+                $criterionId = $criteriaMap[$g['criterion_id']] ?? $g['criterion_id'];
+
+                if ($g['score'] === null || $g['score'] === '') {
+                    Grade::where('evaluation_criterion_id', $criterionId)
+                        ->where('student_id', $g['student_id'])
+                        ->delete();
+                } else {
+                    // HasUuids maneja la creación de UUIDs
+                    Grade::updateOrCreate(
+                        [
+                            'evaluation_criterion_id' => $criterionId,
+                            'student_id'              => $g['student_id'],
+                        ],
+                        [
+                            'score' => $g['score'],
+                        ]
+                    );
+                }
+            }
+        });
+
+        return response()->json(['message' => 'Calificaciones guardadas exitosamente.']);
     }
 }

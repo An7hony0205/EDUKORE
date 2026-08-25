@@ -19,13 +19,13 @@ class TeacherController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        if (!auth()->user()->hasRole('Admin')) abort(403);
+        if (!auth()->user()->hasRole('admin')) abort(403);
         $tenantId = auth()->user()->tenant_id;
         
         $query = User::with(['teacherProfile.creator'])
             ->when($request->active_only, fn($q) => $q->where('is_active', true))
             ->where('tenant_id', $tenantId)
-            ->role('Teacher');
+            ->role('teacher');
             
         if ($request->has('search') && $request->search != '') {
             $search = $request->search;
@@ -55,7 +55,7 @@ class TeacherController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        if (!auth()->user()->hasRole('Admin')) abort(403);
+        if (!auth()->user()->hasRole('admin')) abort(403);
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email',
@@ -75,7 +75,7 @@ class TeacherController extends Controller
             'is_active' => true,
         ]);
         
-        $user->assignRole('Teacher');
+        $user->assignRole('teacher');
         
         TeacherProfile::create([
             'id' => (string) Str::uuid(),
@@ -94,12 +94,12 @@ class TeacherController extends Controller
 
     public function show($id): JsonResponse
     {
-        if (!auth()->user()->hasRole('Admin')) abort(403);
+        if (!auth()->user()->hasRole('admin')) abort(403);
         $tenantId = auth()->user()->tenant_id;
         
         $teacher = User::with(['teacherProfile.creator', 'roles'])
             ->where('tenant_id', $tenantId)
-            ->role('Teacher')
+            ->role('teacher')
             ->findOrFail($id);
             
         return response()->json(['data' => $teacher]);
@@ -107,11 +107,11 @@ class TeacherController extends Controller
 
     public function update(Request $request, $id): JsonResponse
     {
-        if (!auth()->user()->hasRole('Admin')) abort(403);
+        if (!auth()->user()->hasRole('admin')) abort(403);
         $tenantId = auth()->user()->tenant_id;
         
         $teacher = User::where('tenant_id', $tenantId)
-            ->role('Teacher')
+            ->role('teacher')
             ->findOrFail($id);
             
         $profileId = $teacher->teacherProfile ? $teacher->teacherProfile->id : null;
@@ -147,18 +147,18 @@ class TeacherController extends Controller
         }
 
         return response()->json([
-            'message' => 'Información del docente actualizada correctamente.',
+            'message' => 'InformaciÃ³n del docente actualizada correctamente.',
             'data' => $teacher->load('teacherProfile.creator')
         ]);
     }
 
     public function toggleStatus($id): JsonResponse
     {
-        if (!auth()->user()->hasRole('Admin')) abort(403);
+        if (!auth()->user()->hasRole('admin')) abort(403);
         $tenantId = auth()->user()->tenant_id;
         
         $teacher = User::where('tenant_id', $tenantId)
-            ->role('Teacher')
+            ->role('teacher')
             ->findOrFail($id);
             
         $teacher->is_active = !$teacher->is_active;

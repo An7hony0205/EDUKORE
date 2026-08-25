@@ -17,6 +17,7 @@ class StudentController extends Controller
     {
         $perPage = $request->query('per_page', 15);
         $search = $request->query('search', '');
+        $sort = $request->query('sort', 'recent');
 
         $query = Student::with('user');
 
@@ -25,6 +26,12 @@ class StudentController extends Controller
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%");
             });
+        }
+
+        if ($sort === 'oldest') {
+            $query->orderBy('created_at', 'asc');
+        } else {
+            $query->orderBy('created_at', 'desc');
         }
 
         $students = $query->paginate($perPage);
@@ -52,14 +59,18 @@ class StudentController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'student.name' => 'required|string|max:255',
-            'student.email' => 'required|email|unique:users,email',
-            'student.enrollment_number' => 'required|string',
-            'parents' => 'required|array',
-            'parents.*.name' => 'required|string|max:255',
-            'parents.*.email' => 'required|email',
-            'parents.*.phone' => 'required|string',
-            'parents.*.relationship' => 'required|string'
+            'student.name'           => 'required|string|max:255',
+            'student.document_number'=> 'required|string|max:30',
+            'student.email'          => 'nullable|email|unique:users,email',
+            'student.date_of_birth'  => 'nullable|date',
+            'student.section_id'     => 'nullable|uuid|exists:academic_sections,id',
+            'parents'                => 'required|array|min:1',
+            'parents.*.name'         => 'required|string|max:255',
+            'parents.*.document_number' => 'required|string|max:30',
+            'parents.*.email'        => 'nullable|email',
+            'parents.*.phone'        => 'nullable|string|max:30',
+            'parents.*.address'      => 'nullable|string|max:255',
+            'parents.*.relationship' => 'required|string',
         ]);
 
         try {
@@ -67,51 +78,77 @@ class StudentController extends Controller
 
             $tenantId = auth()->user()->tenant_id;
 
-            // 1. Create Student User
+            // ── Autogenerar matrícula única ─────────────────────────────────
+            do {
+                $enrollmentNumber = date('Y') . '-' . str_pad(rand(1, 99999), 5, '0', STR_PAD_LEFT);
+            } while (Student::where('enrollment_number', $enrollmentNumber)->exists());
+
+            // ── Fallback de correo del alumno ───────────────────────────────
+            $studentEmail = $request->input('student.email')
+                ?: strtolower(Str::slug($request->input('student.document_number'))) . '@demo.edu';
+
+            // ── 1. Crear User del Estudiante ────────────────────────────────
             $studentUser = User::create([
-                'id' => Str::uuid(),
+                'id'        => (string) Str::uuid(),
                 'tenant_id' => $tenantId,
-                'name' => $request->input('student.name'),
-                'email' => $request->input('student.email'),
-                'password' => Hash::make('password123'), // Default password
+                'name'      => $request->input('student.name'),
+                'email'     => $studentEmail,
+                'password'  => Hash::make($request->input('student.document_number')),
+                'is_active' => true,
             ]);
-            $studentUser->assignRole('Student');
+            $studentUser->assignRole('student');
 
-            // 2. Create Student Profile
+            // ── 2. Crear Perfil del Estudiante ──────────────────────────────
             $student = Student::create([
-                'id' => Str::uuid(),
-                'user_id' => $studentUser->id,
-                'enrollment_number' => $request->input('student.enrollment_number'),
-                'date_of_birth' => $request->input('student.date_of_birth'),
-                'status' => 'activo'
+                'id'               => (string) Str::uuid(),
+                'user_id'          => $studentUser->id,
+                'enrollment_number'=> $enrollmentNumber,
+                'date_of_birth'    => $request->input('student.date_of_birth'),
+                'section_id'       => $request->input('student.section_id') ?: null,
+                'status'           => 'activo',
             ]);
 
-            // 3. Process Parents
+            // ── 3. Procesar Apoderados ──────────────────────────────────────
             $parentIds = [];
             foreach ($request->input('parents') as $parentData) {
-                // Check if parent user already exists
-                $parentUser = User::where('email', $parentData['email'])->where('tenant_id', $tenantId)->first();
-                
+                // Fallback de correo del apoderado
+                $parentEmail = !empty($parentData['email'])
+                    ? $parentData['email']
+                    : strtolower(Str::slug($parentData['document_number'])) . '@demo.edu';
+
+                // Reusar si ya existe en el tenant (por correo)
+                $parentUser = User::where('email', $parentEmail)
+                                  ->where('tenant_id', $tenantId)
+                                  ->first();
+
                 if (!$parentUser) {
                     $parentUser = User::create([
-                        'id' => Str::uuid(),
+                        'id'        => (string) Str::uuid(),
                         'tenant_id' => $tenantId,
-                        'name' => $parentData['name'],
-                        'email' => $parentData['email'],
-                        'password' => Hash::make('password123'),
+                        'name'      => $parentData['name'],
+                        'email'     => $parentEmail,
+                        'password'  => Hash::make($parentData['document_number']),
+                        'is_active' => true,
                     ]);
-                    $parentUser->assignRole('Parent');
+                    $parentUser->assignRole('parent');
                 }
 
                 $parentProfile = ParentProfile::firstOrCreate(
                     ['user_id' => $parentUser->id],
-                    ['id' => Str::uuid(), 'phone' => $parentData['phone'], 'address' => $parentData['address'] ?? null]
+                    [
+                        'id'              => (string) Str::uuid(),
+                        'document_number' => $parentData['document_number'],
+                        'phone'           => $parentData['phone'] ?? null,
+                        'address'         => $parentData['address'] ?? null,
+                    ]
                 );
 
-                $parentIds[(string) $parentProfile->id] = ['relationship_type' => $parentData['relationship']];
+                $parentIds[(string) $parentProfile->id] = [
+                    'relationship_type' => $parentData['relationship'],
+                ];
             }
 
-            // 4. Attach Parents to Student
+            // ── 4. Vincular apoderados al estudiante ────────────────────────
             $student->parents()->sync($parentIds);
 
             DB::commit();
@@ -119,13 +156,16 @@ class StudentController extends Controller
             $student->load(['user', 'parents.user']);
 
             return response()->json([
-                'message' => 'Student and parents registered successfully',
-                'data' => $student
+                'message' => 'Estudiante y apoderados registrados exitosamente.',
+                'data'    => $student,
             ], 201);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['message' => 'Registration failed', 'error' => $e->getMessage()], 500);
+            return response()->json([
+                'message' => 'El registro falló.',
+                'error'   => $e->getMessage(),
+            ], 500);
         }
     }
 

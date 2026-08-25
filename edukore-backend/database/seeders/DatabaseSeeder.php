@@ -10,6 +10,10 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        $this->call([
+            RoleSeeder::class,
+        ]);
+
         $tenant = Tenant::create([
             'id' => \Illuminate\Support\Str::uuid(),
             'subdomain' => 'demo',

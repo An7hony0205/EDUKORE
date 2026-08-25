@@ -1,0 +1,25 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('academic_sections', function (Blueprint $table) {
+            $table->uuid('id')->primary();
+            $table->foreignUuid('grade_id')->constrained('academic_grades')->cascadeOnDelete();
+            $table->string('name');                              // A, B, Única
+            $table->unsignedSmallInteger('max_capacity')->default(25);
+            $table->foreignUuid('tutor_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('academic_sections');
+    }
+};

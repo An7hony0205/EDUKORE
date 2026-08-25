@@ -88,14 +88,8 @@ const initials = () => {
       <!-- Logo area -->
       <div class="flex items-center justify-between px-6 py-6 border-b border-slate-200 dark:border-brand-border">
         <div class="flex items-center gap-3">
-          <div v-if="!tenantLogo" class="w-8 h-8 rounded-lg flex items-center justify-center bg-slate-900 dark:bg-white text-white dark:text-slate-900">
-            <svg width="18" height="18" viewBox="0 0 48 48" fill="currentColor">
-              <path d="M12 24L24 14L36 24L36 36L24 30L12 36Z" fill-opacity="0.9"/>
-              <circle cx="24" cy="22" r="4"/>
-            </svg>
-          </div>
-          <div v-else class="w-8 h-8 rounded-lg flex items-center justify-center bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-brand-border overflow-hidden">
-            <img :src="tenantLogo" alt="Logo Institución" class="w-full h-full object-cover" />
+          <div class="w-8 h-8 rounded-lg flex items-center justify-center bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-brand-border overflow-hidden">
+            <img :src="tenantLogo || '/favicon.svg'" alt="Logo Institución" class="w-full h-full object-cover" />
           </div>
           <span class="text-base font-bold text-slate-900 dark:text-slate-100">
             {{ auth.user?.tenant?.name || 'EduKore' }}
@@ -116,17 +110,23 @@ const initials = () => {
 
         <!-- ACADÉMICO -->
         <template v-if="auth.user?.role?.name === 'admin' || auth.user?.role?.name === 'teacher'">
-          <div class="pt-4 pb-2">
-            <p class="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Académico</p>
+          <div v-if="auth.user?.role?.name === 'admin'" class="mt-8 mb-2 px-3">
+            <h3 class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Académico</h3>
           </div>
           <router-link to="/students" custom v-slot="{ isActive, navigate }">
             <NavItem icon="users" label="Estudiantes" :active="isActive" @click="navigate(); isMobileClose()" />
           </router-link>
+          <router-link to="/parents/new" custom v-slot="{ isActive, navigate }">
+            <NavItem icon="user-plus" label="Familias" :active="isActive" @click="navigate(); isMobileClose()" />
+          </router-link>
           <router-link v-if="auth.user?.role?.name === 'admin'" to="/teachers" custom v-slot="{ isActive, navigate }">
             <NavItem icon="users" label="Docentes" :active="isActive" @click="navigate(); isMobileClose()" />
           </router-link>
+          <router-link v-if="auth.user?.role?.name === 'admin'" to="/courses" custom v-slot="{ isActive, navigate }">
+            <NavItem icon="list" label="Catálogo de Cursos" :active="isActive" @click="navigate(); isMobileClose()" />
+          </router-link>
           <router-link to="/course-assignments" custom v-slot="{ isActive, navigate }">
-            <NavItem icon="book-open" label="Cursos" :active="isActive" @click="navigate(); isMobileClose()" />
+            <NavItem icon="book-open" label="Asignaciones" :active="isActive" @click="navigate(); isMobileClose()" />
           </router-link>
           <!-- Links for attendance, grades... handled via courses mostly for teachers, but reports here -->
           <router-link to="/reports" custom v-slot="{ isActive, navigate }">
@@ -155,6 +155,18 @@ const initials = () => {
           <div class="pt-4 pb-2">
             <p class="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Administración</p>
           </div>
+          <router-link to="/daily-attendance" custom v-slot="{ isActive, navigate }">
+            <NavItem icon="check-square" label="Asistencia" :active="isActive" @click="navigate(); isMobileClose()" />
+          </router-link>
+          <router-link to="/grades" custom v-slot="{ isActive, navigate }">
+            <NavItem icon="award" label="Calificaciones" :active="isActive" @click="navigate(); isMobileClose()" />
+          </router-link>
+          <router-link to="/schedules" custom v-slot="{ isActive, navigate }">
+            <NavItem icon="calendar" label="Horarios" :active="isActive" @click="navigate(); isMobileClose()" />
+          </router-link>
+          <router-link to="/academic-structure" custom v-slot="{ isActive, navigate }">
+            <NavItem icon="grid" label="Aulas y Secciones" :active="isActive" @click="navigate(); isMobileClose()" />
+          </router-link>
           <router-link to="/academic-periods" custom v-slot="{ isActive, navigate }">
             <NavItem icon="calendar" label="Periodos Acad." :active="isActive" @click="navigate(); isMobileClose()" />
           </router-link>

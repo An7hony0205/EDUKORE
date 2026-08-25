@@ -1,5 +1,4 @@
 ﻿# -*- coding: utf-8 -*-
-import re
 with open(r'c:\Users\Anthony\Desktop\EDUKORE\edukore-frontend\src\views\CourseAssignmentsView.vue', 'r', encoding='utf-8') as f:
     text = f.read()
 
@@ -18,7 +17,11 @@ replacements = {
     'ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢': '→',
     'ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬': '─',
     'acadÃƒÆ’Ã‚Â©mica': 'académica',
-    'acadÃ©mica': 'académica'
+    'acadÃ©mica': 'académica',
+    'AcadÃ©mico': 'Académico',
+    'AcadÃƒÂ©mico': 'Académico',
+    'SECCIÃ³N': 'SECCIÓN',
+    'SECCIÃƒÂ³N': 'SECCIÓN',
 }
 
 for k, v in replacements.items():

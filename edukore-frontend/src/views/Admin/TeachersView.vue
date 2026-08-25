@@ -128,23 +128,33 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div class="md:col-span-2">
                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Nombre Completo *</label>
-                <input v-model="form.name" type="text" class="w-full bg-white border-slate-300 border dark:bg-slate-800 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 dark:focus:border-slate-500 dark:focus:ring-slate-500" placeholder="Ej. Juan Pérez">
+                <input v-model="form.name" type="text" :class="['w-full bg-white border dark:bg-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-1', errors.name ? 'border-red-400 focus:border-red-500 focus:ring-red-500 dark:border-red-500' : 'border-slate-300 dark:border-slate-700 focus:border-slate-500 focus:ring-slate-500 dark:focus:border-slate-500']" placeholder="Ej. Juan Pérez">
+                <p v-if="errors.name" class="mt-1 text-xs text-red-500">{{ errors.name[0] }}</p>
               </div>
               <div>
                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">DNI *</label>
-                <input v-model="form.dni" type="text" class="w-full bg-white border-slate-300 border dark:bg-slate-800 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 dark:focus:border-slate-500 dark:focus:ring-slate-500" placeholder="Documento de identidad">
+                <input v-model="form.dni" type="text" :class="['w-full bg-white border dark:bg-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-1', errors.dni ? 'border-red-400 focus:border-red-500 focus:ring-red-500 dark:border-red-500' : 'border-slate-300 dark:border-slate-700 focus:border-slate-500 focus:ring-slate-500 dark:focus:border-slate-500']" placeholder="Documento de identidad">
+                <p v-if="errors.dni" class="mt-1 text-xs text-red-500">{{ errors.dni[0] }}</p>
               </div>
               <div>
                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Correo Electrónico *</label>
-                <input v-model="form.email" type="email" class="w-full bg-white border-slate-300 border dark:bg-slate-800 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 dark:focus:border-slate-500 dark:focus:ring-slate-500" placeholder="juan@ejemplo.com">
+                <input v-model="form.email" type="email" :class="['w-full bg-white border dark:bg-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-1', errors.email ? 'border-red-400 focus:border-red-500 focus:ring-red-500 dark:border-red-500' : 'border-slate-300 dark:border-slate-700 focus:border-slate-500 focus:ring-slate-500 dark:focus:border-slate-500']" placeholder="juan@ejemplo.com">
+                <p v-if="errors.email" class="mt-1 text-xs text-red-500">{{ errors.email[0] }}</p>
               </div>
               <div>
                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Teléfono</label>
-                <input v-model="form.phone" type="text" class="w-full bg-white border-slate-300 border dark:bg-slate-800 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 dark:focus:border-slate-500 dark:focus:ring-slate-500" placeholder="Opcional">
+                <input v-model="form.phone" type="text" :class="['w-full bg-white border dark:bg-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-1', errors.phone ? 'border-red-400 focus:border-red-500 focus:ring-red-500 dark:border-red-500' : 'border-slate-300 dark:border-slate-700 focus:border-slate-500 focus:ring-slate-500 dark:focus:border-slate-500']" placeholder="Opcional">
+                <p v-if="errors.phone" class="mt-1 text-xs text-red-500">{{ errors.phone[0] }}</p>
               </div>
               <div class="md:col-span-2">
                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Dirección</label>
-                <input v-model="form.address" type="text" class="w-full bg-white border-slate-300 border dark:bg-slate-800 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 dark:focus:border-slate-500 dark:focus:ring-slate-500" placeholder="Opcional">
+                <input v-model="form.address" type="text" :class="['w-full bg-white border dark:bg-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-1', errors.address ? 'border-red-400 focus:border-red-500 focus:ring-red-500 dark:border-red-500' : 'border-slate-300 dark:border-slate-700 focus:border-slate-500 focus:ring-slate-500 dark:focus:border-slate-500']" placeholder="Opcional">
+                <p v-if="errors.address" class="mt-1 text-xs text-red-500">{{ errors.address[0] }}</p>
+              </div>
+
+              <!-- Mostrar globalError si existe -->
+              <div v-if="globalError" class="md:col-span-2 bg-red-500/10 border border-red-500/20 rounded-xl p-4 flex gap-3">
+                <p class="text-sm text-red-500">{{ globalError }}</p>
               </div>
               
               <div v-if="!editMode" class="md:col-span-2 bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-4 flex gap-3">
@@ -183,6 +193,8 @@ const showModal = ref(false)
 const editMode = ref(false)
 const isSubmitting = ref(false)
 const selectedTeacherId = ref(null)
+const errors = ref({})
+const globalError = ref('')
 const form = ref({
   name: '',
   email: '',
@@ -241,8 +253,11 @@ const closeModal = () => {
   showModal.value = false
 }
 const submitForm = async () => {
+  errors.value = {}
+  globalError.value = ''
+  
   if (!form.value.name || !form.value.email || !form.value.dni) {
-    alert("Nombre, Correo y DNI son obligatorios.")
+    globalError.value = "Nombre, Correo y DNI son obligatorios."
     return
   }
   isSubmitting.value = true
@@ -257,8 +272,12 @@ const submitForm = async () => {
     closeModal()
     fetchTeachers(pagination.value.current_page)
   } catch (error) {
-    const msg = error.response?.data?.message || "Ocurrió un error al guardar."
-    alert(msg)
+    if (error.response?.status === 422) {
+      errors.value = error.response.data.errors
+    } else {
+      globalError.value = error.response?.data?.message || "Ocurrió un error en el servidor."
+      console.error("Error saving teacher:", error.response || error)
+    }
   } finally {
     isSubmitting.value = false
   }

@@ -156,7 +156,7 @@
 <script setup>
 import DashboardLayout from '../../../layouts/DashboardLayout.vue'
 import { ref, onMounted } from 'vue'
-import api from '@/api/axios'
+import api from '../../../api/axios'
 
 // â”€â”€ Estado â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const families       = ref([])

@@ -20,7 +20,7 @@ class StoreParentRequest extends FormRequest
             // ─── Datos del User ───────────────────────────────────────────────────
             'name'            => ['required', 'string', 'max:255'],
             'last_name'       => ['required', 'string', 'max:255'],
-            'email'           => ['required', 'email', 'max:255', Rule::unique('users', 'email')],
+            'email'           => ['nullable', 'email', 'max:255', Rule::unique('users', 'email')],
 
             // ─── DNI: único en la tabla parents por tenant ────────────────────────
             'document_number' => [
@@ -32,6 +32,7 @@ class StoreParentRequest extends FormRequest
             ],
 
             'phone'           => ['nullable', 'string', 'max:30'],
+            'address'         => ['nullable', 'string', 'max:255'],
             'occupation'      => ['nullable', 'string', 'max:100'],
 
             // ─── Hijos: array obligatorio, cada ID debe ser UUID del mismo tenant ─

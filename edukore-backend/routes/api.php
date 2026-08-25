@@ -17,6 +17,10 @@ use App\Http\Controllers\AcademicYearController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\SectionController;
 use App\Http\Controllers\EnrollmentController;
+use App\Http\Controllers\SectionAttendanceController;
+use App\Http\Controllers\ScheduleController;
+use App\Http\Controllers\TimeSlotController;
+use App\Http\Controllers\AcademicTermController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\EvaluationController;
 use App\Http\Controllers\GradeController;
@@ -74,6 +78,22 @@ Route::prefix('v1')->group(function () {
         Route::middleware('role:admin|teacher')->group(function () {
             Route::get('attendance', [AttendanceController::class, 'index']);
             Route::post('attendance/bulk', [AttendanceController::class, 'storeBulk']);
+            // Asistencia diaria por sección (nuevo módulo)
+            Route::get('section-attendance', [SectionAttendanceController::class, 'index']);
+            Route::post('section-attendance/bulk', [SectionAttendanceController::class, 'bulk']);
+            // Horarios semanales por sección
+            Route::get('schedules', [ScheduleController::class, 'index']);
+            Route::post('schedules', [ScheduleController::class, 'store']);
+            Route::delete('schedules/{id}', [ScheduleController::class, 'destroy']);
+            
+            // Configuración de Horas
+            Route::post('time-slots/sync', [TimeSlotController::class, 'sync']);
+            Route::apiResource('time-slots', TimeSlotController::class);
+
+            // Calificaciones
+            Route::get('academic-terms', [AcademicTermController::class, 'index']);
+            Route::get('grades/sheet', [GradeController::class, 'sheet']);
+            Route::post('grades/bulk-sync', [GradeController::class, 'bulkSync']);
 
             Route::apiResource('evaluations', EvaluationController::class);
             Route::post('evaluations/{evaluation}/publish', [EvaluationController::class, 'publish']);
@@ -96,6 +116,9 @@ Route::prefix('v1')->group(function () {
             Route::apiResource('grade-levels', GradeLevelController::class);
             Route::apiResource('sections', SectionController::class);
             Route::get('academic-structure', [AcademicStructureController::class, 'index']);
+            Route::get('academic-structure/summary', [AcademicStructureController::class, 'summary']);
+            Route::get('academic-structure/sections/{sectionId}/students', [AcademicStructureController::class, 'sectionStudents']);
+            Route::put('academic-structure/sections/{sectionId}/tutor', [AcademicStructureController::class, 'updateTutor']);
             Route::get('sections/{section}/details', [SectionController::class, 'details']);
             Route::apiResource('academic-periods', AcademicPeriodController::class);
             Route::patch('academic-periods/{academic_period}/toggle-lock', [AcademicPeriodController::class, 'toggleLock']);

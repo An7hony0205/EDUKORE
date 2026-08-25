@@ -2,55 +2,29 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Spatie\Activitylog\Traits\LogsActivity;
-use Spatie\Activitylog\LogOptions;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Grade extends Model
 {
-    use HasFactory, HasUuids, LogsActivity;
+    use HasUuids;
 
-    protected $keyType = 'string';
+    protected $table = 'grades';
     public $incrementing = false;
+    protected $keyType = 'string';
 
     protected $fillable = [
-        'id',
-        'evaluation_id',
-        'enrollment_id',
-        'score',
-        'rubric_results',
-        'feedback',
+        'id', 'evaluation_criterion_id', 'student_id', 'score', 'letter_grade', 'feedback', 'created_by'
     ];
 
-    protected function casts(): array
+    public function criterion(): BelongsTo
     {
-        return [
-            'rubric_results' => 'array',
-        ];
+        return $this->belongsTo(EvaluationCriterion::class, 'evaluation_criterion_id');
     }
 
-    public function getActivitylogOptions(): LogOptions
+    public function student(): BelongsTo
     {
-        return LogOptions::defaults()
-            ->logAll()
-            ->logOnlyDirty();
-    }
-
-    public function evaluation(): BelongsTo
-    {
-        return $this->belongsTo(Evaluation::class);
-    }
-
-    public function enrollment(): BelongsTo
-    {
-        return $this->belongsTo(Enrollment::class);
-    }
-
-    public function audits()
-    {
-        return $this->hasMany(GradeAudit::class);
+        return $this->belongsTo(Student::class);
     }
 }

@@ -24,7 +24,7 @@ const formData = ref({
 })
 const formError = ref('')
 
-const isAdmin = computed(() => authStore.user?.role?.name === 'Admin')
+const isAdmin = computed(() => authStore.user?.roles?.[0]?.name === 'admin' || authStore.user?.role?.name === 'admin')
 
 const fetchFilteredCourses = () => {
   academicStore.fetchCourses({

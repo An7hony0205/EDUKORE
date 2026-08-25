@@ -22,6 +22,7 @@ class Student extends Model
         'date_of_birth',
         'address',
         'status',
+        'section_id',
     ];
 
     protected $casts = [
@@ -47,5 +48,10 @@ class Student extends Model
     public function parents(): BelongsToMany
     {
         return $this->belongsToMany(ParentProfile::class, 'student_parents', 'student_id', 'parent_id');
+    }
+
+    public function section(): BelongsTo
+    {
+        return $this->belongsTo(AcademicSection::class, 'section_id');
     }
 }

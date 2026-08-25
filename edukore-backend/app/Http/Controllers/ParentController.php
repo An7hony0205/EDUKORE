@@ -50,11 +50,13 @@ class ParentController extends Controller
             // ─── PASO 1: Crear el User ──────────────────────────────────────────
             // UUID generado por Str::uuid() — nunca auto-incremental.
             // Contraseña temporal = document_number hasheado.
+            $userEmail = $request->email ?: strtolower(Str::slug($request->document_number)) . '@demo.edu';
+
             $user = User::create([
                 'id'        => (string) Str::uuid(),
                 'tenant_id' => $tenantId,
                 'name'      => trim($request->name . ' ' . $request->last_name),
-                'email'     => $request->email,
+                'email'     => $userEmail,
                 'password'  => Hash::make($request->document_number),
                 'is_active' => true,
             ]);
@@ -70,6 +72,7 @@ class ParentController extends Controller
                 'document_number' => $request->document_number,
                 'occupation'      => $request->occupation,
                 'phone'           => $request->phone,
+                'address'         => $request->address,
             ]);
 
             // ─── PASO 3: Vincular hijos vía tabla pivote student_parents ───────
